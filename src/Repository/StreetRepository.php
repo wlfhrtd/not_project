@@ -39,6 +39,20 @@ class StreetRepository extends ServiceEntityRepository
         }
     }
 
+    public function removeArrayOf(array $streets, bool $flush = false): void
+    {
+        $em = $this->getEntityManager();
+
+        foreach ($streets as $street) {
+
+            $em->remove($street);
+        }
+
+        if ($flush) {
+            $em->flush();
+        }
+    }
+
 //    /**
 //     * @return Street[] Returns an array of Street objects
 //     */

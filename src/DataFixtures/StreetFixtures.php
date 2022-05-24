@@ -15,7 +15,7 @@ class StreetFixtures extends Fixture
         while ($line = fgets($kurskStreetsFile)) {
 
             $street = new Street();
-            $street->setName(trim($line, "\n"));
+            $street->setName(trim($line));
 
             $manager->persist($street);
         }
