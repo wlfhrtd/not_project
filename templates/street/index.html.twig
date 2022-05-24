@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Street index{% endblock %}
+
+{% block body %}
+    <h1>Street index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for street in streets %}
+            <tr>
+                <td>{{ street.id }}</td>
+                <td>{{ street.name }}</td>
+                <td>
+                    <a href="{{ path('app_street_show', {'id': street.id}) }}">show</a>
+                    <a href="{{ path('app_street_edit', {'id': street.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="3">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_street_new') }}">Create new</a>
+{% endblock %}

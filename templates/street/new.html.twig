@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Street{% endblock %}
+
+{% block body %}
+    <h1>Create new Street</h1>
+
+    {{ include('street/_form.html.twig') }}
+
+    <a href="{{ path('app_street_index') }}">back to list</a>
+{% endblock %}
