@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Street;
+use App\Form\PaginationType;
 use App\Form\StreetType;
 use App\Repository\StreetRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,8 +14,8 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/street')]
 class StreetController extends AbstractController
 {
-    #[Route('/', name: 'app_street_index', methods: ['GET'])]
-    public function index(StreetRepository $streetRepository): Response
+    #[Route('/', name: 'app_street_index', methods: ['GET', 'POST'])]
+    public function index(Request $request, StreetRepository $streetRepository): Response
     {
         /*
         $duplications = [];
@@ -33,9 +34,25 @@ class StreetController extends AbstractController
         $streetRepository->removeArrayOf($duplications, true);
         */
 
+        // pagination
+        $paginationForm = $this->createForm(PaginationType::class);
+        $paginationForm->handleRequest($request);
+
+        $paginationOffset = max(0, $request->query->getInt('offset', 0));
+
+        if ($paginationForm->isSubmitted() && $paginationForm->isValid()) {
+
+            $paginationOffset = ($paginationForm->get('page')->getData() - 1) * StreetRepository::PAGINATOR_PER_PAGE;
+        }
+
+        $paginator = $streetRepository->getStreetPaginator($paginationOffset);
+
         return $this->render('street/index.html.twig', [
-            'streets' => $streetRepository->findAll(),
-        ]);
+            'paginationForm' => $paginationForm->createView(),
+            'streets' => $paginator,
+            'previous' => $paginationOffset - StreetRepository::PAGINATOR_PER_PAGE,
+            'next' => min(count($paginator), $paginationOffset + StreetRepository::PAGINATOR_PER_PAGE),
+        ])->setSharedMaxAge(3600);
     }
 
     #[Route('/new', name: 'app_street_new', methods: ['GET', 'POST'])]

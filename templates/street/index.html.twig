@@ -1,9 +1,14 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Street index{% endblock %}
+{% block title %}Streets{% endblock %}
 
 {% block body %}
-    <h1>Street index</h1>
+
+    <div class="d-flex just-content-start">
+        <h1 class="mb-5">Streets ✅</h1>
+        <a href="{{ path('app_street_new') }}" class="btn btn-warning btn-warning w-25 h-50">Add new street</a>
+        <div>There are {{ streets|length }} streets.</div>
+    </div>
 
     <table class="table">
         <thead>
@@ -31,5 +36,32 @@
         </tbody>
     </table>
 
-    <a href="{{ path('app_street_new') }}">Create new</a>
+    {% if previous >= 0 %}
+        <a href="{{ path('app_street_index', { offset: previous }) }}"
+           class="btn btn-light">
+            Previous
+        </a>
+    {% endif %}
+    {% if next < streets|length %}
+        <a href="{{ path('app_street_index', { offset: next }) }}"
+           class="btn btn-light">
+            Next
+        </a>
+    {% endif %}
+
+    <br />
+    <br />
+
+    <table class="table-hover">
+        <tbody>
+        <tr>
+            <td><h3>Go to page:</h3></td>
+            {{ form_start(paginationForm) }}
+            <td>{{ form_widget(paginationForm.page) }}</td>
+            <td><button type="submit" id="pagination_form_submit" class="btn btn-light">Go</button></td>
+            {{ form_end(paginationForm) }}
+        </tr>
+        </tbody>
+    </table>
+
 {% endblock %}
