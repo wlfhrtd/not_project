@@ -50,6 +50,7 @@ class StreetController extends AbstractController
         return $this->render('street/index.html.twig', [
             'paginationForm' => $paginationForm->createView(),
             'streets' => $paginator,
+            'paginationCap' => ceil(count($paginator) / StreetRepository::PAGINATOR_PER_PAGE),
             'previous' => $paginationOffset - StreetRepository::PAGINATOR_PER_PAGE,
             'next' => min(count($paginator), $paginationOffset + StreetRepository::PAGINATOR_PER_PAGE),
         ])->setSharedMaxAge(3600);

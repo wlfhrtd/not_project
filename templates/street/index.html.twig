@@ -7,7 +7,7 @@
     <div class="d-flex just-content-start">
         <h1 class="mb-5">Streets ✅</h1>
         <a href="{{ path('app_street_new') }}" class="btn btn-warning btn-warning w-25 h-50">Add new street</a>
-        <div>There are {{ streets|length }} streets.</div>
+        <h4>There are {{ streets|length }} streets on {{ paginationCap }} pages.</h4>
     </div>
 
     <table class="table">
@@ -55,9 +55,10 @@
     <table class="table-hover">
         <tbody>
         <tr>
+            <h4>There are {{ paginationCap }} pages.</h4>
             <td><h3>Go to page:</h3></td>
             {{ form_start(paginationForm) }}
-            <td>{{ form_widget(paginationForm.page) }}</td>
+            <td>{{ form_widget(paginationForm.page, { 'attr': { 'max': paginationCap } }) }}</td>
             <td><button type="submit" id="pagination_form_submit" class="btn btn-light">Go</button></td>
             {{ form_end(paginationForm) }}
         </tr>
