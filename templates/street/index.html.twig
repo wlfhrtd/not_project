@@ -6,7 +6,7 @@
 
     <div class="d-flex just-content-start">
         <h1 class="mb-5">Streets 🧭</h1>
-        <a href="{{ path('app_street_new') }}" class="btn btn-link w-25 h-50">Add new street</a>
+        <a href="{{ path('app_street_new') }}" class="btn btn-secondary w-25 h-50">Add new street</a>
         <h4>There are {{ streets|length }} streets on {{ paginationCap }} pages.</h4>
     </div>
 
@@ -22,8 +22,8 @@
             <tr>
                 <td>{{ street.name }}</td>
                 <td>
-                    <a href="{{ path('app_street_show', {'id': street.id}) }}">show</a>
-                    <a href="{{ path('app_street_edit', {'id': street.id}) }}">edit</a>
+                    <a href="{{ path('app_street_show', {'id': street.id}) }}" class="btn btn-sm btn-secondary">show</a>
+                    <a href="{{ path('app_street_edit', {'id': street.id}) }}" class="btn btn-sm btn-secondary">edit</a>
                 </td>
             </tr>
         {% else %}
@@ -36,13 +36,13 @@
 
     {% if previous >= 0 %}
         <a href="{{ path('app_street_index', { offset: previous }) }}"
-           class="btn btn-link">
+           class="btn btn-secondary">
             Previous
         </a>
     {% endif %}
     {% if next < streets|length %}
         <a href="{{ path('app_street_index', { offset: next }) }}"
-           class="btn btn-link">
+           class="btn btn-secondary">
             Next
         </a>
     {% endif %}
@@ -57,7 +57,7 @@
             <td><h3>Go to page:</h3></td>
             {{ form_start(paginationForm) }}
             <td>{{ form_widget(paginationForm.page, { 'attr': { 'max': paginationCap } }) }}</td>
-            <td><button type="submit" id="pagination_form_submit" class="btn btn-link">Go</button></td>
+            <td><button type="submit" id="pagination_form_submit" class="btn btn-secondary">Go</button></td>
             {{ form_end(paginationForm) }}
         </tr>
         </tbody>
