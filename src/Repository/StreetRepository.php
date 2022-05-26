@@ -46,20 +46,6 @@ class StreetRepository extends ServiceEntityRepository
         }
     }
 
-    public function removeArrayOf(array $streets, bool $flush = false): void
-    {
-        $em = $this->getEntityManager();
-
-        foreach ($streets as $street) {
-
-            $em->remove($street);
-        }
-
-        if ($flush) {
-            $em->flush();
-        }
-    }
-
     public function getStreetPaginator(int $offset): Paginator
     {
         $query = $this->createQueryBuilder('s')

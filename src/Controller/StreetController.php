@@ -17,23 +17,6 @@ class StreetController extends AbstractController
     #[Route('/', name: 'app_street_index', methods: ['GET', 'POST'])]
     public function index(Request $request, StreetRepository $streetRepository): Response
     {
-        /*
-        $duplications = [];
-        $streets = $streetRepository->findAll();
-        for ($i = 0; $i < count($streets); $i++) {
-            for ($j = $i + 1; $j < count($streets); $j++) {
-
-                if ($streets[$i]->getName() === $streets[$j]->getName()) {
-                    // dd($streets[$i], $streets[$j]);
-                    $duplications[] = $streets[$j];
-
-                }
-            }
-        }
-        // dd($duplications);
-        $streetRepository->removeArrayOf($duplications, true);
-        */
-
         // pagination
         $paginationForm = $this->createForm(PaginationType::class);
         $paginationForm->handleRequest($request);

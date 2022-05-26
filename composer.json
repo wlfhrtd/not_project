@@ -10,7 +10,11 @@
         "doctrine/doctrine-bundle": "^2.6",
         "doctrine/doctrine-migrations-bundle": "^3.2",
         "doctrine/orm": "^2.12",
+        "liip/imagine-bundle": "^2.7",
+        "phpoffice/phpspreadsheet": "^1.23",
         "sensio/framework-extra-bundle": "^6.2",
+        "stof/doctrine-extensions-bundle": "^1.7",
+        "symfony/asset": "6.0.*",
         "symfony/console": "6.0.*",
         "symfony/doctrine-bridge": "6.0.*",
         "symfony/dotenv": "6.0.*",
@@ -22,7 +26,8 @@
         "symfony/security-csrf": "6.0.*",
         "symfony/twig-bundle": "6.0.*",
         "symfony/validator": "6.0.*",
-        "symfony/yaml": "6.0.*"
+        "symfony/yaml": "6.0.*",
+        "vich/uploader-bundle": "^1.19"
     },
     "config": {
         "allow-plugins": {

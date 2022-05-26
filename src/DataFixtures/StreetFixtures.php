@@ -12,15 +12,37 @@ class StreetFixtures extends Fixture
     {
         $kurskStreetsFile = fopen('assets/kursk_streets.txt', 'r');
 
+        $streets = [];
+
         while ($line = fgets($kurskStreetsFile)) {
 
             $street = new Street();
             $street->setName(trim($line));
 
-            $manager->persist($street);
+            $streets[] = $street;
         }
 
         fclose($kurskStreetsFile);
+
+        // replace duplications with null
+        for ($i = 0; $i < count($streets); $i++) {
+            for ($j = $i + 1; $j < count($streets); $j++) {
+
+                if ($streets[$i] !== null && $streets[$j] !== null) {
+                    if ($streets[$i]->getName() === $streets[$j]->getName()) {
+                        $streets[$j] = null;
+                    }
+                }
+
+            }
+        }
+
+        foreach ($streets as $street) {
+            if ($street !== null) {
+
+                $manager->persist($street);
+            }
+        }
 
         $manager->flush();
     }
