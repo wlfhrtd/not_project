@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Customers 🗣{% endblock %}
+
+{% block body %}
+
+    <div class="d-flex just-content-start">
+        <h1 class="mb-5">Customers 🗣</h1>
+        <a href="{{ path('app_customer_new') }}" class="btn btn-secondary w-25 h-50">Add new customer</a>
+        <h4>There are {{ customers|length }} customers on {{ paginationCap }} pages.</h4>
+    </div>
+
+    <table class="table table-dark table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Last Name</th>
+                <th>First Name</th>
+                <th>Middle Name</th>
+                <th>DocumentFilename</th>
+                <th>Apartment</th>
+                <th>BuildingNumber</th>
+                <th>Info</th>
+                <th>Status</th>
+                <th>CreatedAt</th>
+                <th>UpdatedAt</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for customer in customers %}
+            <tr>
+                <td>{{ customer.id }}</td>
+                <td>{{ customer.lastName }}</td>
+                <td>{{ customer.firstName }}</td>
+                <td>{{ customer.middleName }}</td>
+                <td>{{ customer.documentFilename }}</td>
+                <td>{{ customer.apartment }}</td>
+                <td>{{ customer.buildingNumber }}</td>
+                <td>{{ customer.info }}</td>
+                <td>{{ customer.status }}</td>
+                <td>{{ customer.createdAt ? customer.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ customer.updatedAt ? customer.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_customer_show', {'id': customer.id}) }}" class="btn btn-sm btn-secondary">show</a>
+                    <a href="{{ path('app_customer_edit', {'id': customer.id}) }}" class="btn btn-sm btn-secondary">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="10">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% if previous >= 0 %}
+        <a href="{{ path('app_customer_index', { offset: previous }) }}"
+           class="btn btn-secondary">
+            Previous
+        </a>
+    {% endif %}
+    {% if next < customers|length %}
+        <a href="{{ path('app_customer_index', { offset: next }) }}"
+           class="btn btn-secondary">
+            Next
+        </a>
+    {% endif %}
+
+    <br />
+    <br />
+
+    <table class="table-hover">
+        <tbody>
+        <tr>
+            <h4>There are {{ paginationCap }} pages.</h4>
+            <td><h3>Go to page:</h3></td>
+            {{ form_start(paginationForm) }}
+            <td>{{ form_widget(paginationForm.page, { 'attr': { 'max': paginationCap } }) }}</td>
+            <td><button type="submit" id="pagination_form_submit" class="btn btn-secondary">Go</button></td>
+            {{ form_end(paginationForm) }}
+        </tr>
+        </tbody>
+    </table>
+
+{% endblock %}

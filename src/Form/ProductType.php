@@ -6,6 +6,7 @@ use App\Entity\Product;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 use Vich\UploaderBundle\Form\Type\VichImageType;
 
 class ProductType extends AbstractType
@@ -26,6 +27,16 @@ class ProductType extends AbstractType
                 'image_uri' => true,
                 'asset_helper' => true,
                 'imagine_pattern' => 'product_photo_320x240',
+                'constraints' => [
+                    new File([
+                        'mimeTypes' => [
+                            'image/bmp',
+                            'image/jpeg',
+                            'image/gif',
+                            'image/png',
+                        ]
+                    ])
+                ]
             ])
         ;
     }

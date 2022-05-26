@@ -14,5 +14,6 @@
 ###< liip/imagine-bundle ###
 
 ###> dev_uploads ###
-/public/images/products/
+/public/images/products/*
+/public/documents/customers/*
 ###< dev_uploads ###
