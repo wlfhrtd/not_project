@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Product;
+use App\Form\PaginationType;
 use App\Form\ProductType;
 use App\Repository\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,11 +14,28 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/product')]
 class ProductController extends AbstractController
 {
-    #[Route('/', name: 'app_product_index', methods: ['GET'])]
-    public function index(ProductRepository $productRepository): Response
+    #[Route('/', name: 'app_product_index', methods: ['GET', 'POST'])]
+    public function index(Request $request, ProductRepository $productRepository): Response
     {
+        // pagination
+        $paginationForm = $this->createForm(PaginationType::class);
+        $paginationForm->handleRequest($request);
+
+        $paginationOffset = max(0, $request->query->getInt('offset', 0));
+
+        if ($paginationForm->isSubmitted() && $paginationForm->isValid()) {
+
+            $paginationOffset = ($paginationForm->get('page')->getData() - 1) * ProductRepository::PAGINATOR_PER_PAGE;
+        }
+
+        $paginator = $productRepository->getProductPaginator($paginationOffset);
+
         return $this->render('product/index.html.twig', [
-            'products' => $productRepository->findAll(),
+            'paginationForm' => $paginationForm->createView(),
+            'products' => $paginator,
+            'paginationCap' => ceil(count($paginator) / ProductRepository::PAGINATOR_PER_PAGE),
+            'previous' => $paginationOffset - ProductRepository::PAGINATOR_PER_PAGE,
+            'next' => min(count($paginator), $paginationOffset + ProductRepository::PAGINATOR_PER_PAGE),
         ]);
     }
 

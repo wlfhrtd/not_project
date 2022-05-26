@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Product;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -15,6 +16,8 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class ProductRepository extends ServiceEntityRepository
 {
+    public const PAGINATOR_PER_PAGE = 50;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Product::class);
@@ -60,6 +63,19 @@ class ProductRepository extends ServiceEntityRepository
     public function findAllWithHidden(): array
     {
         return $this->findBy([], ['name' => 'ASC', 'id' => 'ASC']);
+    }
+
+    public function getProductPaginator(int $offset): Paginator
+    {
+        $query = $this->createQueryBuilder('p')
+            ->andWhere('p.status != :val')
+            ->setParameter('val', Product::STATUS_PRODUCT_HIDDEN)
+            ->orderBy('p.name', 'ASC')
+            ->setMaxResults(self::PAGINATOR_PER_PAGE)
+            ->setFirstResult($offset)
+            ->getQuery();
+
+        return new Paginator($query);
     }
 
 //    /**

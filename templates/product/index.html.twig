@@ -1,11 +1,16 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Product index{% endblock %}
+{% block title %}Products 🍒{% endblock %}
 
 {% block body %}
-    <h1>Product index</h1>
 
-    <table class="table">
+    <div class="d-flex just-content-start">
+        <h1 class="mb-5">Products 🍒</h1>
+        <a href="{{ path('app_product_new') }}" class="btn btn-secondary w-25 h-50">Add new product</a>
+        <h4>There are {{ products|length }} products on {{ paginationCap }} pages.</h4>
+    </div>
+
+    <table class="table table-dark table-striped table-hover">
         <thead>
             <tr>
                 <th>Id</th>
@@ -29,8 +34,8 @@
                 <td>{{ product.price }}</td>
                 <td>{{ product.imageFilename }}</td>
                 <td>
-                    <a href="{{ path('app_product_show', {'id': product.id}) }}">show</a>
-                    <a href="{{ path('app_product_edit', {'id': product.id}) }}">edit</a>
+                    <a href="{{ path('app_product_show', {'id': product.id}) }}" class="btn btn-sm btn-secondary">show</a>
+                    <a href="{{ path('app_product_edit', {'id': product.id}) }}" class="btn btn-sm btn-secondary">edit</a>
                 </td>
             </tr>
         {% else %}
@@ -41,5 +46,33 @@
         </tbody>
     </table>
 
-    <a href="{{ path('app_product_new') }}">Create new</a>
+    {% if previous >= 0 %}
+        <a href="{{ path('app_product_index', { offset: previous }) }}"
+           class="btn btn-secondary">
+            Previous
+        </a>
+    {% endif %}
+    {% if next < products|length %}
+        <a href="{{ path('app_product_index', { offset: next }) }}"
+           class="btn btn-secondary">
+            Next
+        </a>
+    {% endif %}
+
+    <br />
+    <br />
+
+    <table class="table-hover">
+        <tbody>
+        <tr>
+            <h4>There are {{ paginationCap }} pages.</h4>
+            <td><h3>Go to page:</h3></td>
+            {{ form_start(paginationForm) }}
+            <td>{{ form_widget(paginationForm.page, { 'attr': { 'max': paginationCap } }) }}</td>
+            <td><button type="submit" id="pagination_form_submit" class="btn btn-secondary">Go</button></td>
+            {{ form_end(paginationForm) }}
+        </tr>
+        </tbody>
+    </table>
+
 {% endblock %}
