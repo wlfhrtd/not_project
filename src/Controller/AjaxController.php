@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\CustomerRepository;
 use App\Repository\StreetRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,6 +24,25 @@ class AjaxController extends AbstractController
             $response[] = [
                 'id' => $street->getId(),
                 'text' => $street->getName(),
+            ];
+        }
+
+        return new JsonResponse($response);
+    }
+
+    #[Route('/findcustomers', name: 'findcustomers')]
+    public function findCustomers(Request $request, CustomerRepository $customerRepository)
+    {
+        $key = $request->query->get('q');
+
+        $customers = $customerRepository->filterByKey($key);
+
+        $response = array();
+
+        foreach ($customers as $customer) {
+            $response[] = [
+                'id' => $customer->getId(),
+                'text' => $customer->getLastName() . ' ' . $customer->getFirstName() . ' ' . $customer->getMiddleName(),
             ];
         }
 

@@ -30,7 +30,7 @@ class Customer
     #[ORM\Column(type: 'string', length: 255)]
     private $firstName;
 
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[ORM\Column(type: 'string', length: 255)]
     private $middleName;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -70,6 +70,11 @@ class Customer
         $this->status = self::STATUS_CUSTOMER_NEW;
         $this->documentFile = null;
         $this->orders = new ArrayCollection();
+    }
+
+    public function __toString()
+    {
+        return $this->lastName . ' ' . $this->firstName . ' ' . $this->middleName;
     }
 
     public function getId(): ?int

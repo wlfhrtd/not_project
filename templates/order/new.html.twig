@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Order{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        $(document).ready(function () {
+            // select2 search field doesn't work with listeners directly so event delegation is required
+            $(document).on('keyup', '.select2-search__field', function(e) {
+                let $inputValue = e.target.value;
+                let $fields = $inputValue.split(' ');
+                let $output = $fields[0].substring(0, 1).toUpperCase() + $fields[0].substring(1).toLowerCase();
+                for (let i = 1; i < $fields.length; i++) {
+                    $output += ' ' + $fields[i].substring(0, 1).toUpperCase() + $fields[i].substring(1).toLowerCase();
+                }
+                e.target.value = $output;
+            });
+        })
+    </script>
+{% endblock%}
+
+{% block body %}
+    <h1>Create new Order</h1>
+
+    {{ include('order/_form.html.twig') }}
+
+    <a href="{{ path('app_order_index') }}">back to list</a>
+{% endblock %}

@@ -78,6 +78,18 @@ class CustomerRepository extends ServiceEntityRepository
         return new Paginator($query);
     }
 
+    // select2 & AjaxController functionality
+    public function filterByKey($key)
+    {
+        $query = $this->createQueryBuilder('c')
+            ->andWhere("concat(c.lastName, ' ', c.firstName, ' ', c.middleName) LIKE :key")
+            ->setParameter('key', $key . '%')
+            ->orderBy('c.lastName', 'ASC')
+            ->getQuery();
+
+        return $query->execute();
+    }
+
 //    /**
 //     * @return Customer[] Returns an array of Customer objects
 //     */

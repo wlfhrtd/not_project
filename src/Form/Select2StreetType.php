@@ -24,6 +24,7 @@ class Select2StreetType extends AbstractType
                 'cache_timeout' => 60000,
                 'mapped' => true,
                 'required' => true,
+                'minimum_input_length' => 2, // js capitalization of first letter is not visible to backend with min_input 1 and leads to '0 results found'
 
                 //'language' => 'ru',
 
