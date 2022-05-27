@@ -399,6 +399,9 @@
     "symfony/yaml": {
         "version": "v6.0.3"
     },
+    "tetranz/select2entity-bundle": {
+        "version": "v3.1.0"
+    },
     "twig/twig": {
         "version": "v3.4.1"
     },

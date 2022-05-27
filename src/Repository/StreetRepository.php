@@ -25,7 +25,7 @@ class StreetRepository extends ServiceEntityRepository
 
     public function findAll(): array
     {
-        return $this->findBy([], ['name' => 'ASC']);
+        return $this->findBy([], ['name' => 'ASC', 'id' => 'ASC']);
     }
 
     public function add(Street $entity, bool $flush = false): void
@@ -55,6 +55,18 @@ class StreetRepository extends ServiceEntityRepository
             ->getQuery();
 
         return new Paginator($query);
+    }
+
+    // select2 & AjaxController functionality
+    public function filterByKey($key)
+    {
+        $query = $this->createQueryBuilder('s')
+            ->andWhere('s.name LIKE :key')
+            ->setParameter('key', $key . '%')
+            ->orderBy('s.name', 'ASC')
+            ->getQuery();
+
+        return $query->execute();
     }
 
 //    /**

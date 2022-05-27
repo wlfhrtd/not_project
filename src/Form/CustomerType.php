@@ -4,8 +4,10 @@ namespace App\Form;
 
 use App\Entity\Customer;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 use Vich\UploaderBundle\Form\Type\VichFileType;
 
 class CustomerType extends AbstractType
@@ -22,11 +24,16 @@ class CustomerType extends AbstractType
                 'download_label' => true,
                 'download_uri' => true,
                 'asset_helper' => true,
+                'constraints' => [
+                    new File([
+                        'maxSize' => '100M'
+                    ])
+                ],
             ])
             ->add('apartment')
             ->add('buildingNumber')
-            ->add('info')
-            ->add('street')
+            ->add('info', TextareaType::class)
+            ->add('street', Select2StreetType::class)
         ;
     }
 

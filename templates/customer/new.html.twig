@@ -2,6 +2,32 @@
 
 {% block title %}New Customer{% endblock %}
 
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        $(document).ready(function () {
+            // select2 search field doesn't work with listeners directly so event delegation is required
+            $(document).on('keyup', '.select2-search__field', function(e) {
+                e.target.value = e.target.value.substring(0, 1).toUpperCase() + e.target.value.substring(1).toLowerCase();
+            });
+
+            let $lastName = $('#customer_lastName');
+            let $firstName = $('#customer_firstName');
+            let $middleName = $('#customer_middleName');
+
+            addCapitalization($lastName);
+            addCapitalization($firstName);
+            addCapitalization($middleName);
+        })
+
+        function addCapitalization($input) {
+            $input.on('keyup', function (e) {
+                e.target.value = e.target.value.substring(0, 1).toUpperCase() + e.target.value.substring(1).toLowerCase();
+            })
+        }
+    </script>
+{% endblock%}
+
 {% block body %}
     <h1>Create new Customer</h1>
 
