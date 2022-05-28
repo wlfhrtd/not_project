@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Product;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
@@ -15,7 +16,12 @@ class ProductType extends AbstractType
     {
         $builder
             ->add('name')
-            ->add('quantityInStock')
+            ->add('quantityInStock',NumberType::class, [
+                'html5' => true,
+                'attr' => [
+                    'min' => 0,
+                ],
+            ])
             ->add('description')
             ->add('price')
             ->add('imageFile', VichImageType::class, [

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Order;
 use App\Form\OrderType;
+use App\Form\PaginationType;
 use App\Repository\OrderRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,11 +14,28 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/order')]
 class OrderController extends AbstractController
 {
-    #[Route('/', name: 'app_order_index', methods: ['GET'])]
-    public function index(OrderRepository $orderRepository): Response
+    #[Route('/', name: 'app_order_index', methods: ['GET', 'POST'])]
+    public function index(Request $request, OrderRepository $orderRepository): Response
     {
+        // pagination
+        $paginationForm = $this->createForm(PaginationType::class);
+        $paginationForm->handleRequest($request);
+
+        $paginationOffset = max(0, $request->query->getInt('offset', 0));
+
+        if ($paginationForm->isSubmitted() && $paginationForm->isValid()) {
+
+            $paginationOffset = ($paginationForm->get('page')->getData() - 1) * OrderRepository::PAGINATOR_PER_PAGE;
+        }
+
+        $paginator = $orderRepository->getOrderPaginator($paginationOffset);
+
         return $this->render('order/index.html.twig', [
-            'orders' => $orderRepository->findAll(),
+            'paginationForm' => $paginationForm->createView(),
+            'orders' => $paginator,
+            'paginationCap' => ceil(count($paginator) / OrderRepository::PAGINATOR_PER_PAGE),
+            'previous' => $paginationOffset - OrderRepository::PAGINATOR_PER_PAGE,
+            'next' => min(count($paginator), $paginationOffset + OrderRepository::PAGINATOR_PER_PAGE),
         ]);
     }
 

@@ -1,4 +1,13 @@
 {{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">{{ button_label|default('Save') }}</button>
+
+    {{ form_start(form) }}
+    {{ form_row(form.customer) }}
+    {{ form_row(form.status) }}
+    {{ form_row(form.spreadsheetFilename) }}
+{{ form_row(form.total) }}
+{{ form_row(form.info) }}
+<button type="submit" id="order_form_submit" class="btn btn-primary">{{ button_label|default('Submit order') }}</button>
+{{ form_row(form.cart) }}
+<button type="button" id="order_form_add_button" class="add_item_link btn btn-light" data-collection-holder-class ="items">{{ button_label|default('Add product') }}</button>
+
 {{ form_end(form) }}

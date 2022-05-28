@@ -67,6 +67,12 @@ class Product
         return $this->id;
     }
 
+    // php ucfirst() doesn't work with RU(and other many-bytes) encoding; otherwise use ucfirst(), lcfirst() etc
+    private function mb_ucfirst($text) {
+        mb_internal_encoding("UTF-8");
+        return mb_strtoupper(mb_substr($text, 0, 1)) . mb_substr($text, 1);
+    }
+
     public function getName(): ?string
     {
         return $this->name;
@@ -74,7 +80,7 @@ class Product
 
     public function setName(string $name): self
     {
-        $this->name = $name;
+        $this->name = trim(self::mb_ucfirst($name));
 
         return $this;
     }

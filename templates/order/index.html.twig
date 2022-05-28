@@ -1,11 +1,16 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Order index{% endblock %}
+{% block title %}Orders 🗎{% endblock %}
 
 {% block body %}
-    <h1>Order index</h1>
 
-    <table class="table">
+    <div class="d-flex just-content-start">
+        <h1 class="mb-5">Orders 🗎</h1>
+        <a href="{{ path('app_order_new') }}" class="btn btn-warning btn-warning w-25 h-50">Add new order</a>
+        <div>There are {{ orders|length }} orders on {{ paginationCap }} pages.</div>
+    </div>
+
+    <table class="table table-dark table-striped table-hover">
         <thead>
             <tr>
                 <th>Id</th>
@@ -29,8 +34,8 @@
                 <td>{{ order.createdAt ? order.createdAt|date('Y-m-d H:i:s') : '' }}</td>
                 <td>{{ order.updatedAt ? order.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
                 <td>
-                    <a href="{{ path('app_order_show', {'id': order.id}) }}">show</a>
-                    <a href="{{ path('app_order_edit', {'id': order.id}) }}">edit</a>
+                    <a href="{{ path('app_order_show', {'id': order.id}) }}" class="btn btn-sm btn-secondary">show</a>
+                    <a href="{{ path('app_order_edit', {'id': order.id}) }}" class="btn btn-sm btn-secondary">edit</a>
                 </td>
             </tr>
         {% else %}
@@ -41,5 +46,33 @@
         </tbody>
     </table>
 
-    <a href="{{ path('app_order_new') }}">Create new</a>
+    {% if previous >= 0 %}
+        <a href="{{ path('app_order_index', { offset: previous }) }}"
+           class="btn btn-secondary">
+            Previous
+        </a>
+    {% endif %}
+    {% if next < orders|length %}
+        <a href="{{ path('app_order_index', { offset: next }) }}"
+           class="btn btn-secondary">
+            Next
+        </a>
+    {% endif %}
+
+    <br />
+    <br />
+
+    <table class="table-hover">
+        <tbody>
+        <tr>
+            <h4>There are {{ paginationCap }} pages.</h4>
+            <td><h3>Go to page:</h3></td>
+            {{ form_start(paginationForm) }}
+            <td>{{ form_widget(paginationForm.page, { 'attr': { 'max': paginationCap } }) }}</td>
+            <td><button type="submit" id="pagination_form_submit" class="btn btn-secondary">Go</button></td>
+            {{ form_end(paginationForm) }}
+        </tr>
+        </tbody>
+    </table>
+
 {% endblock %}

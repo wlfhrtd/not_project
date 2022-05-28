@@ -82,6 +82,12 @@ class Customer
         return $this->id;
     }
 
+    // php ucfirst() doesn't work with RU(and other many-bytes) encoding; otherwise use ucfirst(), lcfirst() etc
+    private function mb_ucfirst($text) {
+        mb_internal_encoding("UTF-8");
+        return mb_strtoupper(mb_substr($text, 0, 1)) . mb_substr($text, 1);
+    }
+
     public function getLastName(): ?string
     {
         return $this->lastName;
@@ -89,7 +95,7 @@ class Customer
 
     public function setLastName(string $lastName): self
     {
-        $this->lastName = $lastName;
+        $this->lastName = trim(self::mb_ucfirst($lastName));
 
         return $this;
     }
@@ -101,7 +107,7 @@ class Customer
 
     public function setFirstName(string $firstName): self
     {
-        $this->firstName = $firstName;
+        $this->firstName = trim(self::mb_ucfirst($firstName));
 
         return $this;
     }
@@ -113,7 +119,7 @@ class Customer
 
     public function setMiddleName(?string $middleName): self
     {
-        $this->middleName = $middleName;
+        $this->middleName = trim(self::mb_ucfirst($middleName));
 
         return $this;
     }

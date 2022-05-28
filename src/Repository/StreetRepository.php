@@ -61,8 +61,8 @@ class StreetRepository extends ServiceEntityRepository
     public function filterByKey($key)
     {
         $query = $this->createQueryBuilder('s')
-            ->andWhere('s.name LIKE :key')
-            ->setParameter('key', $key . '%')
+            ->andWhere('lower(s.name) LIKE :key')
+            ->setParameter('key', '%' . $key . '%')
             ->orderBy('s.name', 'ASC')
             ->getQuery();
 

@@ -82,8 +82,11 @@ class CustomerRepository extends ServiceEntityRepository
     public function filterByKey($key)
     {
         $query = $this->createQueryBuilder('c')
-            ->andWhere("concat(c.lastName, ' ', c.firstName, ' ', c.middleName) LIKE :key")
-            ->setParameter('key', $key . '%')
+            ->andWhere("lower(c.lastName) LIKE :key
+            OR lower(c.firstName) LIKE :key
+            OR lower(concat(c.lastName, ' ', c.firstName)) LIKE :key
+            OR lower(concat(c.firstName, ' ', c.lastName)) LIKE :key")
+            ->setParameter('key', '%' . $key . '%')
             ->orderBy('c.lastName', 'ASC')
             ->getQuery();
 

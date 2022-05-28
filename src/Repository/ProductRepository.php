@@ -78,6 +78,17 @@ class ProductRepository extends ServiceEntityRepository
         return new Paginator($query);
     }
 
+    public function filterByKey($key)
+    {
+        $query = $this->createQueryBuilder('p')
+            ->andWhere('lower(p.name) LIKE :key')
+            ->setParameter('key', '%' . $key . '%')
+            ->orderBy('p.name', 'ASC')
+            ->getQuery();
+
+        return $query->execute();
+    }
+
 //    /**
 //     * @return Product[] Returns an array of Product objects
 //     */
