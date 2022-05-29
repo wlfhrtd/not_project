@@ -62,7 +62,7 @@ class OrderRepository extends ServiceEntityRepository
 
     public function findAllWithCanceled(): array
     {
-        return $this->findBy([], ['updatedAt' => 'DESC', 'id' => 'ASC']);
+        return $this->findBy([], ['updatedAt' => 'DESC', 'id' => 'DESC']);
     }
 
     public function getOrderPaginator(int $offset): Paginator

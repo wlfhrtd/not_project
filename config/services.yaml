@@ -38,3 +38,7 @@ services:
     App\EntityListener\CustomerEntityListener:
         tags:
             - { name: 'doctrine.orm.entity_listener', event: 'preUpdate', entity: 'App\Entity\Customer', lazy: true }
+
+    App\EntityListener\OrderEntityListener:
+        tags:
+            - { name: 'doctrine.orm.entity_listener', event: 'postFlush', entity: 'App\Entity\Order', lazy: true }
