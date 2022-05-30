@@ -4,6 +4,24 @@ framework:
         # failure_transport: failed
 
         transports:
+            amqp_order_bus:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: order_messages
+                        type: fanout
+                    queues:
+                        order_messages: ~
+
+            amqp_email_notification:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: email_notifications
+                        type: fanout
+                    queues:
+                        email_notifications: ~
+
             amqp_telegram_notification:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
                 options:
@@ -18,6 +36,10 @@ framework:
             # sync: 'sync://'
 
         routing:
+            Symfony\Component\Mailer\Messenger\SendEmailMessage: amqp_email_notification
+            Symfony\Component\Notifier\Message\ChatMessage: amqp_telegram_notification
+
+            App\Message\OrderMessage: amqp_order_bus
             # Route your messages to the transports
             # 'App\Message\YourMessage': async
 

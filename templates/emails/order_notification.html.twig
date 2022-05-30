@@ -1,0 +1,18 @@
+{% extends '@email/default/notification/body.html.twig' %}
+
+{% block content %}
+
+    Order id: {{ order.id }} <br />
+    Customer: {{ order.customer }} <br />
+    Order status: {{ order.status }} <br />
+
+    <p>{{ order.total }}</p>
+
+{% endblock %}
+
+{% block action %}
+
+    <spacer size="16"></spacer>
+    <button href="{{ url('app_order_show', { id: order.id }) }}">View order</button>
+
+{% endblock %}
