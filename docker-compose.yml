@@ -1,6 +1,16 @@
 version: '3'
 
 services:
+  rabbitmq:
+    image: rabbitmq:3.10.2-management-alpine
+    container_name: 'rabbitmq'
+    hostname: 'rabbitmq-localhost'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
 ###> doctrine/doctrine-bundle ###
   database:
     image: postgres:${POSTGRES_VERSION:-13}-alpine

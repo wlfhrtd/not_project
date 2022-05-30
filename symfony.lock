@@ -189,6 +189,9 @@
             "./config/packages/stof_doctrine_extensions.yaml"
         ]
     },
+    "symfony/amqp-messenger": {
+        "version": "v6.0.7"
+    },
     "symfony/asset": {
         "version": "v6.0.7"
     },
@@ -274,6 +277,12 @@
             "./src/Kernel.php"
         ]
     },
+    "symfony/http-client": {
+        "version": "v6.0.9"
+    },
+    "symfony/http-client-contracts": {
+        "version": "v3.1.0"
+    },
     "symfony/http-foundation": {
         "version": "v6.0.8"
     },
@@ -289,8 +298,32 @@
             "ref": "fadbfe33303a76e25cb63401050439aa9b1a9c7f"
         }
     },
+    "symfony/messenger": {
+        "version": "6.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "6.0",
+            "ref": "2523f7d31488903e247a522e760dc279be7f7aaf"
+        },
+        "files": [
+            "./config/packages/messenger.yaml"
+        ]
+    },
     "symfony/mime": {
         "version": "v6.0.8"
+    },
+    "symfony/notifier": {
+        "version": "6.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "5.0",
+            "ref": "c31585e252b32fe0e1f30b1f256af553f4a06eb9"
+        },
+        "files": [
+            "./config/packages/notifier.yaml"
+        ]
     },
     "symfony/options-resolver": {
         "version": "v6.0.3"
@@ -358,6 +391,15 @@
     },
     "symfony/string": {
         "version": "v6.0.8"
+    },
+    "symfony/telegram-notifier": {
+        "version": "6.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "5.0",
+            "ref": "5cf5c19e8fdcbf922de680cdf8d65fa7d77758ae"
+        }
     },
     "symfony/translation-contracts": {
         "version": "v3.0.1"
