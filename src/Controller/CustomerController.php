@@ -88,7 +88,7 @@ class CustomerController extends AbstractController
     public function delete(Request $request, Customer $customer, CustomerRepository $customerRepository): Response
     {
         if ($this->isCsrfTokenValid('delete'.$customer->getId(), $request->request->get('_token'))) {
-            $customerRepository->remove($customer, true);
+            $customerRepository->hide($customer, true);
         }
 
         return $this->redirectToRoute('app_customer_index', [], Response::HTTP_SEE_OTHER);

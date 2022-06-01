@@ -72,7 +72,7 @@ class AjaxController extends AbstractController
     #[Route('/find_product_one', name: 'find_product_one')]
     public function findProductOne(Request $request, ProductRepository $productRepository)
     {
-        $product = $productRepository->findOneBy(['id' => $request->get('id')]);
+        $product = $productRepository->findOneByIdHideHidden($request->get('id'));
         $price = $product->getPrice();
         $quantityInStock = $product->getQuantityInStock();
         return new JsonResponse([

@@ -34,14 +34,15 @@ class OrderRepository extends ServiceEntityRepository
 
     public function remove(Order $entity, bool $flush = false): void
     {
-        /*
         $this->getEntityManager()->remove($entity);
 
         if ($flush) {
             $this->getEntityManager()->flush();
         }
-        */
+    }
 
+    public function hide(Order $entity, bool $flush = false)
+    {
         $entity->setStatus(Order::STATUS_ORDER_CANCELED);
 
         if ($flush) {
@@ -51,7 +52,13 @@ class OrderRepository extends ServiceEntityRepository
 
     public function findAll(): array
     {
+        return $this->findBy([], ['updatedAt' => 'DESC', 'id' => 'DESC']);
+    }
+
+    public function findAllHideCanceled(): array
+    {
         return $this->createQueryBuilder('o')
+            // hide canceled
             ->andWhere('o.status != :val')
             ->setParameter('val', Order::STATUS_ORDER_CANCELED)
             ->orderBy('o.updatedAt', 'DESC')
@@ -60,14 +67,10 @@ class OrderRepository extends ServiceEntityRepository
             ;
     }
 
-    public function findAllWithCanceled(): array
-    {
-        return $this->findBy([], ['updatedAt' => 'DESC', 'id' => 'DESC']);
-    }
-
     public function getOrderPaginator(int $offset): Paginator
     {
         $query = $this->createQueryBuilder('o')
+            // hide canceled
             ->andWhere('o.status != :val')
             ->setParameter('val', Order::STATUS_ORDER_CANCELED)
             ->orderBy('o.updatedAt', 'DESC')
