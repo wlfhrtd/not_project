@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Entity\Order;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\Filesystem\Exception\IOException;
 
 class OrderExport
 {
@@ -39,7 +40,6 @@ class OrderExport
         // CART
         $workSheet->getCellByColumnAndRow(1,10)->setValue('Cart');
         // cart header
-        $headerHSize = 5; // cells
         $workSheet->getCellByColumnAndRow(1,11)->setValue('№');
         $workSheet->getCellByColumnAndRow(2,11)->setValue('Product');
         $workSheet->getCellByColumnAndRow(3,11)->setValue('Price per unit');
@@ -64,7 +64,15 @@ class OrderExport
         $workSheet->getCellByColumnAndRow(3, $itemsFinishRow + 5)->setValue(new \DateTime());
 
         $fileName = 'order_' . $order->getId() . '.xlsx';
-        $this->writer->save($this->savePath . $fileName);
+
+        try {
+
+            $this->writer->save($this->savePath . $fileName);
+
+        } catch (\PhpOffice\PhpSpreadsheet\Writer\Exception) {
+
+            throw new IOException('PhpOfficeException: Unable to write file || ZipStream: Overflow exception');
+        }
 
         return $fileName;
     }

@@ -112,7 +112,7 @@ class OrderController extends AbstractController
     public function finish(Request $request, Order $order, OrderRepository $orderRepository): Response
     {
         if ($this->isCsrfTokenValid('finish'.$order->getId(), $request->request->get('_token'))) {
-
+            // TODO ORDER VALIDATION HERE
             $order->setStatus(Order::STATUS_ORDER_FINISHED);
             $orderRepository->add($order, true);
         }
@@ -125,10 +125,15 @@ class OrderController extends AbstractController
     {
         if ($this->isCsrfTokenValid('export'.$order->getId(), $request->request->get('_token'))) {
 
-            $filename = $orderExport->export($order);
-            if (!$filename) {
-                throw new HttpException(418, "Unable to write file");
+            try {
+
+                $filename = $orderExport->export($order);
+
+            } catch (IOException $e) {
+
+                throw new HttpException(418, "Unable to write file!" . $e->getMessage());
             }
+
             $order->setSpreadsheetFilename($filename);
             $orderRepository->add($order, true);
         }
@@ -137,7 +142,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}/download', name: 'app_order_download', methods: ['POST'])]
-    public function download(Request $request, Order $order, string $orderExportPath)
+    public function download(Request $request, Order $order, string $orderExportPath): BinaryFileResponse
     {
         if ($this->isCsrfTokenValid('download'.$order->getId(), $request->request->get('_token'))) {
 
@@ -152,6 +157,6 @@ class OrderController extends AbstractController
             return $response;
         }
 
-        return new HttpException(419, "CSRF token mismatch");
+        throw new HttpException(419, "CSRF token mismatch");
     }
 }
