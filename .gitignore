@@ -13,7 +13,13 @@
 /public/media/cache/
 ###< liip/imagine-bundle ###
 
-###> dev_uploads ###
+###> dev ###
 /public/images/products/*
 /public/documents/customers/*
+/public/documents/orders/*
+###< dev ###
+
+###> dev_uploads ###
+/config/secrets/dev/
+/config/secrets/dev/*
 ###< dev_uploads ###

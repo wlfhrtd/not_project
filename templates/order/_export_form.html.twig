@@ -1,0 +1,15 @@
+{% if order.spreadsheetFilename is same as null %}
+
+    <form method="post" action="{{ path('app_order_export', {'id': order.id}) }}" onsubmit="return confirm('You are about to export order. Process?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('export' ~ order.id) }}">
+        <button class="btn btn-warning">Export order</button>
+    </form>
+
+{% else %}
+
+    <form method="post" action="{{ path('app_order_download', {'id': order.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('download' ~ order.id) }}">
+        <button class="btn btn-warning">Download order document</button>
+    </form>
+
+{% endif %}

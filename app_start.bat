@@ -6,6 +6,8 @@ docker-compose stop
 symfony server:start -d
 docker-compose up -d
 
+timeout 30
+
 REM symfony run -d --watch=config,src,templates,vendor symfony console messenger:consume TRANSPORT_NAME --time-limit=3600 --memory-limit=128M
 symfony run -d --watch=config,src,templates,vendor symfony console messenger:consume amqp_order_bus --time-limit=3600 --memory-limit=128M
 symfony run -d --watch=config,src,templates,vendor symfony console messenger:consume amqp_email_notification --time-limit=3600 --memory-limit=128M

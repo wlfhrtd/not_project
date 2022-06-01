@@ -1,0 +1,4 @@
+<form method="post" action="{{ path('app_order_finish', {'id': order.id}) }}" onsubmit="return confirm('Are you sure you want to finish this order?');">
+    <input type="hidden" name="_token" value="{{ csrf_token('finish' ~ order.id) }}">
+    <button class="btn btn-warning">Finish order</button>
+</form>

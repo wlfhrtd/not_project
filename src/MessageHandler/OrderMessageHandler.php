@@ -5,43 +5,33 @@ namespace App\MessageHandler;
 use App\Message\OrderMessage;
 use App\Notification\OrderNotification;
 use App\Repository\OrderRepository;
-use Symfony\Bridge\Twig\Mime\NotificationEmail;
-use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Notifier\NotifierInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class OrderMessageHandler implements MessageHandlerInterface
 {
     private $orderRepository;
     private $notifier;
-    private $mailer;
-    private $adminEmail;
+    private $router;
 
     /**
      * @param OrderRepository $orderRepository
      * @param NotifierInterface $notifier
-     * @param MailerInterface $mailer
-     * @param string $adminEmail
+     * @param UrlGeneratorInterface $router
      */
-    public function __construct(OrderRepository $orderRepository, NotifierInterface $notifier, MailerInterface $mailer, string $adminEmail)
+    public function __construct(OrderRepository $orderRepository, NotifierInterface $notifier, UrlGeneratorInterface $router)
     {
         $this->orderRepository = $orderRepository;
         $this->notifier = $notifier;
-        $this->mailer = $mailer;
-        $this->adminEmail = $adminEmail;
+        $this->router = $router;
     }
 
     public function __invoke(OrderMessage $message)
     {
         $orderId = $message->getId();
         $order = $this->orderRepository->findOneBy(['id' => $orderId]);
-        $this->notifier->send(new OrderNotification($order->getId()));
-        $this->mailer->send((new NotificationEmail())
-            ->subject('New order added')
-            ->htmlTemplate('emails/order_notification.html.twig')
-            ->from($this->adminEmail)
-            ->to($this->adminEmail)
-            ->context(['order' => $order])
-        );
+        $orderUrl = $this->router->generate('app_order_show', ['id' => $orderId], UrlGeneratorInterface::ABSOLUTE_URL);
+        $this->notifier->send(new OrderNotification($order, $orderUrl), ...$this->notifier->getAdminRecipients());
     }
 }

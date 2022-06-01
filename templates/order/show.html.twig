@@ -44,7 +44,19 @@
 
     <a href="{{ path('app_order_index') }}" class="btn btn-secondary">back to list</a>
 
-    <a href="{{ path('app_order_edit', {'id': order.id}) }}" class="btn btn-secondary">edit</a>
+    {% if order.status is not same as orderStatusFinished %}
 
-    {{ include('order/_delete_form.html.twig') }}
+        <a href="{{ path('app_order_edit', {'id': order.id}) }}" class="btn btn-secondary">edit</a>
+        {{ include('order/_delete_form.html.twig') }}
+
+        {% if order.status is not same as orderStatusDraft %}
+            {{ include('order/_finish_form.html.twig') }}
+        {% endif %}
+
+    {% endif %}
+
+    {% if order.status is same as orderStatusFinished %}
+        {{ include('order/_export_form.html.twig') }}
+    {% endif %}
+
 {% endblock %}

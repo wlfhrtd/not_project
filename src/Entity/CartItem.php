@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\CartItemRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\PositiveOrZero;
 
 #[ORM\Entity(repositoryClass: CartItemRepository::class)]
 class CartItem
@@ -15,7 +16,7 @@ class CartItem
     private $id;
 
     #[ORM\Column(type: 'integer')]
-    #[GreaterThanOrEqual(1)]
+    #[PositiveOrZero]
     private $quantity;
 
     #[ORM\ManyToOne(targetEntity: Product::class)]
@@ -28,7 +29,7 @@ class CartItem
 
     public function __construct()
     {
-        $this->quantity = 1;
+        $this->quantity = 0;
     }
 
     public function getId(): ?int

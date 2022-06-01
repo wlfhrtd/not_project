@@ -40,7 +40,7 @@ class OrderCartItemType extends AbstractType
                 'attr' => [
                     'class' => 'item_quantity',
                     'readonly' => true,
-                    'min' => 1,
+                    'min' => 0,
                 ],
             ])
             ->add('in_stock', NumberType::class, [

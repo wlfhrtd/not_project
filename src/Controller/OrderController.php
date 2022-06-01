@@ -6,10 +6,21 @@ use App\Entity\Order;
 use App\Form\OrderType;
 use App\Form\PaginationType;
 use App\Repository\OrderRepository;
+use App\Service\OrderExport;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 #[Route('/order')]
 class OrderController extends AbstractController
@@ -36,6 +47,7 @@ class OrderController extends AbstractController
             'paginationCap' => ceil(count($paginator) / OrderRepository::PAGINATOR_PER_PAGE),
             'previous' => $paginationOffset - OrderRepository::PAGINATOR_PER_PAGE,
             'next' => min(count($paginator), $paginationOffset + OrderRepository::PAGINATOR_PER_PAGE),
+            'orderStatusFinished' => Order::STATUS_ORDER_FINISHED,
         ]);
     }
 
@@ -63,6 +75,8 @@ class OrderController extends AbstractController
     {
         return $this->render('order/show.html.twig', [
             'order' => $order,
+            'orderStatusFinished' => Order::STATUS_ORDER_FINISHED,
+            'orderStatusDraft' => Order::STATUS_ORDER_DRAFT,
         ]);
     }
 
@@ -92,5 +106,52 @@ class OrderController extends AbstractController
         }
 
         return $this->redirectToRoute('app_order_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    #[Route('/{id}/finish', name: 'app_order_finish', methods: ['POST'])]
+    public function finish(Request $request, Order $order, OrderRepository $orderRepository): Response
+    {
+        if ($this->isCsrfTokenValid('finish'.$order->getId(), $request->request->get('_token'))) {
+
+            $order->setStatus(Order::STATUS_ORDER_FINISHED);
+            $orderRepository->add($order, true);
+        }
+
+        return $this->redirectToRoute('app_order_show', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
+    }
+
+    #[Route('/{id}/export', name: 'app_order_export', methods: ['POST'])]
+    public function export(Request $request, Order $order, OrderRepository $orderRepository, OrderExport $orderExport): Response
+    {
+        if ($this->isCsrfTokenValid('export'.$order->getId(), $request->request->get('_token'))) {
+
+            $filename = $orderExport->export($order);
+            if (!$filename) {
+                throw new HttpException(418, "Unable to write file");
+            }
+            $order->setSpreadsheetFilename($filename);
+            $orderRepository->add($order, true);
+        }
+
+        return $this->redirectToRoute('app_order_show', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
+    }
+
+    #[Route('/{id}/download', name: 'app_order_download', methods: ['POST'])]
+    public function download(Request $request, Order $order, string $orderExportPath)
+    {
+        if ($this->isCsrfTokenValid('download'.$order->getId(), $request->request->get('_token'))) {
+
+            $path = $orderExportPath . $order->getSpreadsheetFilename();
+
+            $response = new BinaryFileResponse($path);
+            $response->setContentDisposition(
+                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+                $order->getSpreadsheetFilename()
+            );
+
+            return $response;
+        }
+
+        return new HttpException(419, "CSRF token mismatch");
     }
 }

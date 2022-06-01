@@ -35,7 +35,9 @@
                 <td>{{ order.updatedAt ? order.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
                 <td>
                     <a href="{{ path('app_order_show', {'id': order.id}) }}" class="btn btn-sm btn-secondary">show</a>
-                    <a href="{{ path('app_order_edit', {'id': order.id}) }}" class="btn btn-sm btn-secondary">edit</a>
+                    {% if order.status is not same as orderStatusFinished %}
+                        <a href="{{ path('app_order_edit', {'id': order.id}) }}" class="btn btn-sm btn-secondary">edit</a>
+                    {% endif %}
                 </td>
             </tr>
         {% else %}

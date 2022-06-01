@@ -68,6 +68,8 @@ class OrderRepository extends ServiceEntityRepository
     public function getOrderPaginator(int $offset): Paginator
     {
         $query = $this->createQueryBuilder('o')
+            ->andWhere('o.status != :val')
+            ->setParameter('val', Order::STATUS_ORDER_CANCELED)
             ->orderBy('o.updatedAt', 'DESC')
             ->setMaxResults(self::PAGINATOR_PER_PAGE)
             ->setFirstResult($offset)
