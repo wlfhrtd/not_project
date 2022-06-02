@@ -1,7 +1,7 @@
 framework:
     messenger:
-        # Uncomment this (and the failed transport below) to send failed messages to this transport for later handling.
-        # failure_transport: failed
+
+        failure_transport: failed
 
         transports:
             amqp_order_bus:
@@ -12,6 +12,10 @@ framework:
                         type: fanout
                     queues:
                         order_messages: ~
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
 
             amqp_email_notification:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
@@ -21,6 +25,10 @@ framework:
                         type: fanout
                     queues:
                         email_notifications: ~
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
 
             amqp_telegram_notification:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
@@ -30,9 +38,15 @@ framework:
                         type: fanout
                     queues:
                         telegram_notifications: ~
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+
+            failed: 'doctrine://default?queue_name=failed'
+
             # https://symfony.com/doc/current/messenger.html#transport-configuration
             # async: '%env(MESSENGER_TRANSPORT_DSN)%'
-            # failed: 'doctrine://default?queue_name=failed'
             # sync: 'sync://'
 
         routing:
