@@ -66,7 +66,7 @@ class OrderCartItemType extends AbstractType
             ])
             ->add('delete', ButtonType::class, [
                 'attr' => [
-                    'class' => 'btn btn-danger delete_button',
+                    'class' => 'btn btn-danger btn_delete',
                 ],
             ])
         ;
