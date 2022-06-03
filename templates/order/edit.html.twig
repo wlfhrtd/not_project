@@ -6,92 +6,103 @@
     {{ parent() }}
     <script>
         $(document).ready(function () {
-            // select2 search field doesn't work with listeners directly so event delegation is required
-            /*
-            $(document).on('keyup', '.select2-search__field', function(e) {
-                let $inputValue = e.target.value;
-                let $fields = $inputValue.split(' ');
-                let $output = $fields[0].substring(0, 1).toUpperCase() + $fields[0].substring(1).toLowerCase();
-                for (let i = 1; i < $fields.length; i++) {
-                    $output += ' ' + $fields[i].substring(0, 1).toUpperCase() + $fields[i].substring(1).toLowerCase();
-                }
-                e.target.value = $output;
-            });*/
-
-            // Get the ul that holds the collection of items
+            // Get the container (div/ul/table/form-group) that holds the collection of items
             let $collectionHolder = $('div.items');
-
-            $collectionHolder.find('p').each(function () {
+            // prepare view for loaded entity
+            $collectionHolder.find('div.justify-content-start').each(function (index, item) {
+                itemTotal(index, item);
+                addCalcItemPrice($(this));
                 addItemFormDeleteLink($(this));
+                addAjaxProduct($(this));
+                $(this).find('.item_quantity').attr('readonly', false);
             })
 
-            // count the current form inputs we have (e.g. 2), use that as the new
-            // index when inserting a new item (e.g. 2)
+            /*
+            count the current form inputs we have (e.g. 2; 0 for action new) in container
+            use that as the new index when inserting a new item
+             */
             $collectionHolder.data('index', $collectionHolder.find('input').length);
 
-            $('body').on('click', '.add_item_link', function(e) {
+            $('body').on('click', '.btn_add_item', function(e) {
                 let $collectionHolderClass = $(e.currentTarget).data('collectionHolderClass');
-                // add a new item form (see next code block)
+                // add a new item form
                 addFormToCollection($collectionHolderClass);
             })
         })
 
+        function itemTotal(index, item) {
+            let price = parseFloat($(item).find('#order_form_cart_items_' + index + '_price').val());
+            let quantity = parseInt($(item).find('#order_form_cart_items_' + index + '_quantity').val());
+            $(item).find('#order_form_cart_items_' + index + '_item_total_price').val(price * quantity);
+        }
+
         function addFormToCollection($collectionHolderClass) {
-            // Get the ul that holds the collection of items
+            // Get the container that holds the collection of items
             let $collectionHolder = $('.' + $collectionHolderClass);
-
-            // Get the data-prototype explained earlier
+            // Get the data-prototype
             let prototype = $collectionHolder.data('prototype');
-
             // get the new index
             let index = $collectionHolder.data('index');
 
             let newForm = prototype;
-            // You need this only if you didn't set 'label' => false in your tags field in TaskType
-            // Replace '__name__label__' in the prototype's HTML to
-            // instead be a number based on how many items we have
-            // newForm = newForm.replace(/__name__label__/g, index);
 
-            // Replace '__name__' in the prototype's HTML to
-            // instead be a number based on how many items we have
+            /*
+            need this if haven't set 'label' => false for entries in form
+            replace '__name__label__' in the prototype's HTML to
+            instead be a number based on how many items we have
+            newForm = newForm.replace(/__name__label__/g, index);
+             */
+
+            /*
+            replace '__name__' in the prototype's HTML to
+            instead be a number based on how many items we have
+             */
             newForm = newForm.replace(/__name__/g, index);
-
             // increase the index with one for the next item
             $collectionHolder.data('index', index + 1);
+            // display the form on the page with desired tag, before the btn_add_item
+            let $newFormItem = $('<p></p>').append(newForm);
 
-            // Display the form in the page in an li, before the "Add" link li; changed to <p>
-            let $newFormLi = $('<p></p>').append(newForm);
+            addCalcItemPrice($newFormItem);
 
-            addCalcItemPrice($newFormLi);
+            addItemFormDeleteLink($newFormItem);
 
-            addItemFormDeleteLink($newFormLi);
+            addAjaxProduct($newFormItem);
 
-            addAjaxProduct($newFormLi);
-
-            // .select2entity() call needed when using collections and/or prototype
-            // readonly handling just to prevent NaN in Total instead of typeof(elem)!=='undefined' check
-            // still buggy if there is any extra item rows with empty fields w/e
-            $newFormLi.find('.select2entity').last().select2entity().on('change', function () {
-                $newFormLi.find('.item_quantity').attr('readonly', false);
+            /*
+            .select2entity() call needed when using collections and/or prototype;
+            also readonly handling just to prevent some NaNs
+             */
+            let $select2field = $newFormItem.find('.select2entity').last().select2entity();
+            $select2field.on('select2:select', function () {
+                $newFormItem.find('.item_quantity').attr('readonly', false);
             });
-
-            // Add the new form at the end of the list
-            $collectionHolder.append($newFormLi)
+            $select2field.on('select2:clearing', function () {
+                $newFormItem.find('.item_quantity').val(null);
+                $newFormItem.find('.item_quantity').attr('readonly', true);
+                $newFormItem.find('.quantity_in_stock').val(null);
+                $newFormItem.find('.product_price').val(null);
+                $newFormItem.find('.item_total_price').val(null);
+                orderTotal();
+            })
+            // add the new form at the end of the container
+            $collectionHolder.append($newFormItem);
         }
 
-        function addItemFormDeleteLink($itemFormLi) {
-            //let $removeFormButton = $('<br /><button type="button" class="btn btn-danger">Delete</button><br />');
-            //$itemFormLi.append($removeFormButton);
+        function addItemFormDeleteLink($newFormItem) {
+            // let $removeFormButton = $('<button type="button" class="btn btn-danger">Delete</button>');
+            // $newFormItem.append($removeFormButton);
 
-            $itemFormLi.find('.delete_button').on('click', function(e) {
-                // remove the li for the item form
-                $itemFormLi.remove();
+            $newFormItem.find('.btn_delete').on('click', function() {
+                // recalculate order total after item remove
+                $newFormItem.remove();
+                orderTotal();
             });
         }
 
-        function addAjaxProduct($newFormLi) {
-            $newFormLi.find('select').on('change', function() {
-                let id = $newFormLi.find('select').val();
+        function addAjaxProduct($newFormItem) {
+            $newFormItem.find('select').on('change', function() {
+                let id = $newFormItem.find('select').val();
                 let dataId = { 'id': id };
                 $.ajax({
                     type    :   'GET',
@@ -99,41 +110,45 @@
                     dataType:   'json',
                     data    :   dataId,
                     success:function(data){
-                        $newFormLi.find('.product_price').val(data.price);
-                        $newFormLi.find('.quantity_in_stock').val(data.quantityInStock);
+                        $newFormItem.find('.product_price').val(data.price);
+                        $newFormItem.find('.quantity_in_stock').val(data.quantityInStock);
                     }
                 });
             });
         }
 
-        function addCalcItemPrice($newFormLi) {
-            // let itemPriceField = $('<label>Item total price <input class="item_total_price" disabled="disabled"></label><br />');
-            // $newFormLi.append(itemPriceField);
+        // order total price
+        function orderTotal() {
+            let totalOrderPrice = 0;
+            $('.item_total_price').each(function (index, item) {
+                if ($(item).val()) {
+                    totalOrderPrice += parseFloat($(item).val());
+                }
+            })
+            $('#order_total').val(totalOrderPrice);
+        }
 
-            $newFormLi.find('.item_quantity').on('change', function () {
-                let price = parseFloat($newFormLi.find('.product_price').val());
-                let quantity = parseInt($newFormLi.find('.item_quantity').val());
-                let stock = parseInt($newFormLi.find('.quantity_in_stock').val());
+        function addCalcItemPrice($newFormItem) {
+            $newFormItem.find('.item_quantity').on('change', function () {
+                let price = parseFloat($newFormItem.find('.product_price').val());
+                let quantity = parseInt($newFormItem.find('.item_quantity').val());
+                let stock = parseInt($newFormItem.find('.quantity_in_stock').val());
 
                 if (quantity < 0) {
                     quantity = 0;
-                    $newFormLi.find('.item_quantity').val(0);
+                    $newFormItem.find('.item_quantity').val(0);
                 }
 
                 if (quantity > stock) {
                     quantity = stock;
-                    $newFormLi.find('.item_quantity').val(stock);
+                    $newFormItem.find('.item_quantity').val(stock);
                 }
                 // single item total price
-                $newFormLi.find('.item_total_price').val(price * quantity);
-
+                if (price && quantity) {
+                    $newFormItem.find('.item_total_price').val(price * quantity);
+                }
                 // order total price
-                let totalOrderPrice = 0;
-                $('.item_total_price').each(function (index, item) {
-                    totalOrderPrice += parseFloat($(item).val());
-                })
-                $('#order_total').val(totalOrderPrice);
-
+                orderTotal();
             });
         }
 

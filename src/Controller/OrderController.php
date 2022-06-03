@@ -2,15 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\CartItem;
 use App\Entity\Order;
 use App\Form\OrderType;
 use App\Form\PaginationType;
 use App\Repository\OrderRepository;
+use App\Repository\ProductRepository;
+use App\Service\OrderEditor;
 use App\Service\OrderExport;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Exception;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -20,7 +19,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 #[Route('/order')]
 class OrderController extends AbstractController
@@ -52,13 +50,22 @@ class OrderController extends AbstractController
     }
 
     #[Route('/new', name: 'app_order_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, OrderRepository $orderRepository): Response
+    public function new(Request $request, OrderRepository $orderRepository, OrderEditor $orderEditor, ProductRepository $productRepository): Response
     {
         $order = new Order();
         $form = $this->createForm(OrderType::class, $order);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // order total price backend check
+            // TODO pass total field value instead of whole form passing
+            if (!$orderEditor->checkTotal($order, $form)) {
+                // TODO response
+                dd($form, $order, $order->getCart(), $form->get('total')->getData(), $order->getCart()->getTotal());
+            }
+            // TODO validation, exceptions, response
+            $orderEditor->handleNew($order, $productRepository);
+
             $orderRepository->add($order, true);
 
             return $this->redirectToRoute('app_order_index', [], Response::HTTP_SEE_OTHER);
@@ -81,15 +88,36 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_order_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Order $order, OrderRepository $orderRepository): Response
+    public function edit(Request $request, Order $order, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
     {
+        // original items
+        // TODO prolly move to editor
+        $originalItems = [];
+        foreach ($order->getCart()->getItems() as $item) {
+            $originalItems[] = (new CartItem()) // TODO why new?
+                ->setProduct($item->getProduct())
+                ->setQuantity($item->getQuantity());
+        }
+
         $form = $this->createForm(OrderType::class, $order);
+        // load values from DB (ajax handled in order_new)
+        $orderEditor->populateForm($order, $form);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // order total price backend check
+            if (!$orderEditor->checkTotal($order, $form)) {
+                // TODO response
+                dd($form, $order, $order->getCart(), $form->get('total')->getData(), $order->getCart()->getTotal());
+            }
+
+            // product sell handling
+            // TODO validation, exceptions, response
+            $orderEditor->handleEdit($order, $originalItems);
+
             $orderRepository->add($order, true);
 
-            return $this->redirectToRoute('app_order_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
         }
 
         return $this->renderForm('order/edit.html.twig', [
