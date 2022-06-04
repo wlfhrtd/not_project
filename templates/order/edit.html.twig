@@ -10,7 +10,8 @@
             let $collectionHolder = $('div.items');
             // prepare view for loaded entity
             $collectionHolder.find('div.justify-content-start').each(function (index, item) {
-                itemTotal(index, item);
+                itemTotal(index, item); // item_total_price calc; all required fields loaded from backend
+
                 addCalcItemPrice($(this));
                 addItemFormDeleteLink($(this));
                 addAjaxProduct($(this));
@@ -31,9 +32,11 @@
         })
 
         function itemTotal(index, item) {
-            let price = parseFloat($(item).find('#order_form_cart_items_' + index + '_price').val());
-            let quantity = parseInt($(item).find('#order_form_cart_items_' + index + '_quantity').val());
-            $(item).find('#order_form_cart_items_' + index + '_item_total_price').val(price * quantity);
+            let price = parseFloat($(item).find('#order_cart_items_' + index + '_price').val());
+            let quantity = parseInt($(item).find('#order_cart_items_' + index + '_quantity').val());
+            if (price && quantity) {
+                $(item).find('#order_cart_items_' + index + '_item_total_price').val(price * quantity);
+            }
         }
 
         function addFormToCollection($collectionHolderClass) {

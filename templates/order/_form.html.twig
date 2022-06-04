@@ -4,9 +4,27 @@
     {{ form_row(form.customer) }}
     {{ form_row(form.status) }}
     {{ form_row(form.spreadsheetFilename) }}
+
+{% for message in app.flashes('total') %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><span aria-hidden="true"></span></button>
+    </div>
+{% endfor %}
+
 {{ form_row(form.total) }}
 {{ form_row(form.info) }}
 <button type="submit" id="order_form_submit" class="btn btn-primary">{{ button_label|default('Submit order') }}</button>
+
+{% for messages in app.flashes('items') %}
+    {% for message in messages %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><span aria-hidden="true"></span></button>
+    </div>
+    {% endfor %}
+{% endfor %}
+
 {{ form_row(form.cart) }}
 <button type="button" id="order_form_add_button" class="btn_add_item btn btn-light" data-collection-holder-class ="items">Add product</button>
 

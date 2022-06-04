@@ -90,11 +90,22 @@ class Product
         return $this->quantityInStock;
     }
 
-    public function setQuantityInStock(int $quantityInStock): self
+    /**
+     * common sense check
+     *
+     * use bool check and handle errors
+     * if(!$p->setQuantity($n)) { ... //'violated non-negative' }
+     */
+    public function setQuantityInStock(int $quantityInStock): bool
     {
+        if ($quantityInStock < 0) {
+            // throw new \LogicException("Violation in product.setQuantityInStock(int): can't be negative");
+            return false;
+        }
+
         $this->quantityInStock = $quantityInStock;
 
-        return $this;
+        return true;
     }
 
     public function getStatus(): ?string

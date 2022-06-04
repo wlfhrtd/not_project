@@ -50,21 +50,27 @@ class OrderController extends AbstractController
     }
 
     #[Route('/new', name: 'app_order_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, OrderRepository $orderRepository, OrderEditor $orderEditor, ProductRepository $productRepository): Response
+    public function new(Request $request, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
     {
         $order = new Order();
         $form = $this->createForm(OrderType::class, $order);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // order total price backend check
-            // TODO pass total field value instead of whole form passing
-            if (!$orderEditor->checkTotal($order, $form)) {
-                // TODO response
-                dd($form, $order, $order->getCart(), $form->get('total')->getData(), $order->getCart()->getTotal());
+            // order backend check
+            if (!$orderEditor->handleNew($order, $form)) {
+                $errorMessages = $orderEditor->getErrorMessages();
+                foreach ($errorMessages as $key => $val) {
+                    $this->addFlash($key, $val);
+                }
+                $form = $this->createForm(OrderType::class, $order);
+                $orderEditor->populateForm($order, $form);
+                $form->handleRequest($request);
+                return $this->renderForm('order/new.html.twig', [
+                    'order' => $order,
+                    'form' => $form,
+                ]);
             }
-            // TODO validation, exceptions, response
-            $orderEditor->handleNew($order, $productRepository);
 
             $orderRepository->add($order, true);
 
@@ -90,30 +96,26 @@ class OrderController extends AbstractController
     #[Route('/{id}/edit', name: 'app_order_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Order $order, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
     {
-        // original items
-        // TODO prolly move to editor
-        $originalItems = [];
-        foreach ($order->getCart()->getItems() as $item) {
-            $originalItems[] = (new CartItem()) // TODO why new?
-                ->setProduct($item->getProduct())
-                ->setQuantity($item->getQuantity());
-        }
-
         $form = $this->createForm(OrderType::class, $order);
         // load values from DB (ajax handled in order_new)
         $orderEditor->populateForm($order, $form);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // order total price backend check
-            if (!$orderEditor->checkTotal($order, $form)) {
-                // TODO response
-                dd($form, $order, $order->getCart(), $form->get('total')->getData(), $order->getCart()->getTotal());
+            // order backend check
+            if (!$orderEditor->handleEdit($order, $form)) {
+                $errorMessages = $orderEditor->getErrorMessages();
+                foreach ($errorMessages as $key => $val) {
+                    $this->addFlash($key, $val);
+                }
+                $form = $this->createForm(OrderType::class, $order);
+                $orderEditor->populateForm($order, $form);
+                $form->handleRequest($request);
+                return $this->renderForm('order/edit.html.twig', [
+                    'order' => $order,
+                    'form' => $form,
+                ]);
             }
-
-            // product sell handling
-            // TODO validation, exceptions, response
-            $orderEditor->handleEdit($order, $originalItems);
 
             $orderRepository->add($order, true);
 
@@ -126,6 +128,8 @@ class OrderController extends AbstractController
         ]);
     }
 
+    // TODO may be rename to cancel()
+    // TODO return products on cancel
     #[Route('/{id}', name: 'app_order_delete', methods: ['POST'])]
     public function delete(Request $request, Order $order, OrderRepository $orderRepository): Response
     {
