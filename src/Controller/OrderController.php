@@ -63,6 +63,7 @@ class OrderController extends AbstractController
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
                 }
+                $orderEditor->clearErrorMessages();
                 $form = $this->createForm(OrderType::class, $order);
                 $orderEditor->populateForm($order, $form);
                 $form->handleRequest($request);
@@ -108,6 +109,7 @@ class OrderController extends AbstractController
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
                 }
+                $orderEditor->clearErrorMessages();
                 $form = $this->createForm(OrderType::class, $order);
                 $orderEditor->populateForm($order, $form);
                 $form->handleRequest($request);
@@ -128,12 +130,21 @@ class OrderController extends AbstractController
         ]);
     }
 
-    // TODO may be rename to cancel()
-    // TODO return products on cancel
-    #[Route('/{id}', name: 'app_order_delete', methods: ['POST'])]
-    public function delete(Request $request, Order $order, OrderRepository $orderRepository): Response
+    #[Route('/{id}', name: 'app_order_cancel', methods: ['POST'])]
+    public function cancel(Request $request, Order $order, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$order->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('cancel' . $order->getId(), $request->request->get('_token'))) {
+            // return products; backend check
+            if (!$orderEditor->cancel($order)) {
+                $errorMessages = $orderEditor->getErrorMessages();
+                foreach ($errorMessages as $key => $val) {
+                    $this->addFlash($key, $val);
+                }
+                $orderEditor->clearErrorMessages();
+
+                return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
+            }
+
             $orderRepository->hide($order, true);
         }
 

@@ -9,13 +9,18 @@ use Symfony\Component\Form\FormInterface;
 class OrderEditor
 {
     private $originalItems; // contains order.cart.items 'backup' to handle order edit action
-    private $errorMessages; // if not initialized handle_ methods return true
-
+    private $errorMessages; // if returns null handle_ methods return true
+    
     public function getErrorMessages(): array
     {
         return $this->errorMessages;
     }
 
+    public function clearErrorMessages()
+    {
+        return $this->errorMessages = null;
+    }
+    
     public function populateForm (Order $order, $form): void
     {
         /*
@@ -175,6 +180,28 @@ class OrderEditor
         $quantitySold = $cartItem->getQuantity();
 
         if ($itemProduct->setQuantityInStock($itemProduct->getQuantityInStock() - $quantitySold)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * PositiveOrZero quantityInStock violation can happen if cartItem.quantity is big negative for some reason
+     * if happens - redirect to order edit view in controller
+     */
+    public function cancel(Order $order): bool
+    {
+        $items = $order->getCart()->getItems();
+        foreach ($items as $item) {
+            $quantity = $item->getQuantity();
+            $product = $item->getProduct();
+            if (!$product->setQuantityInStock($product->getQuantityInStock() + $quantity)) {
+                $this->setError($item);
+            }
+        }
+
+        if (!$this->errorMessages) {
             return true;
         }
 
