@@ -50,6 +50,11 @@ class Order
         $this->total = 0.0;
     }
 
+    public function __toString()
+    {
+        return 'Order id: ' . $this->getId() . '; order.cart id: ' . $this->getCart()->getId();
+    }
+
     public function getId(): ?int
     {
         return $this->id;

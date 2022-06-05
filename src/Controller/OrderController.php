@@ -58,7 +58,7 @@ class OrderController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             // order backend check
-            if (!$orderEditor->handleNew($order, $form)) {
+            if (!$orderEditor->handle($order, $form)) {
                 $errorMessages = $orderEditor->getErrorMessages();
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
@@ -104,7 +104,7 @@ class OrderController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             // order backend check
-            if (!$orderEditor->handleEdit($order, $form)) {
+            if (!$orderEditor->handle($order, $form)) {
                 $errorMessages = $orderEditor->getErrorMessages();
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
@@ -152,10 +152,20 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}/finish', name: 'app_order_finish', methods: ['POST'])]
-    public function finish(Request $request, Order $order, OrderRepository $orderRepository): Response
+    public function finish(Request $request, Order $order, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
     {
-        if ($this->isCsrfTokenValid('finish'.$order->getId(), $request->request->get('_token'))) {
-            // TODO ORDER VALIDATION HERE
+        if ($this->isCsrfTokenValid('finish' . $order->getId(), $request->request->get('_token'))) {
+            // validation
+            if (!$orderEditor->finish($order)) {
+                $errorMessages = $orderEditor->getErrorMessages();
+                foreach ($errorMessages as $key => $val) {
+                    $this->addFlash($key, $val);
+                }
+                $orderEditor->clearErrorMessages();
+
+                return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
+            }
+
             $order->setStatus(Order::STATUS_ORDER_FINISHED);
             $orderRepository->add($order, true);
         }

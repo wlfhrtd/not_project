@@ -32,6 +32,16 @@ class CartItem
         $this->quantity = 0;
     }
 
+    public function __toString()
+    {
+        return 'Item: '
+            . $this->getProduct()->getName()
+            . '; quantity: ' . $this->getQuantity()
+            . '; quantity in stock: '
+            . $this->getProduct()->getQuantityInStock()
+            ;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

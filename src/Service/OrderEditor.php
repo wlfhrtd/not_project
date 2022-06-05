@@ -60,16 +60,6 @@ class OrderEditor
         }
     }
 
-    public function setError(CartItem $cartItem): void
-    {
-        $this->errorMessages['items'][] = 'PositiveOrZero violation @ '
-            . $cartItem->getProduct()->getName()
-            . '; quantity: ' . $cartItem->getQuantity()
-            . '; quantity in stock: '
-            . $cartItem->getProduct()->getQuantityInStock()
-        ;
-    }
-
     // TODO REFACTOR ALL I GUESS IT'S GONNA BE X1 2-DIMENSIONAL =I =J TRAVERSE AND X1 =I REGULAR
     public function contains($originalItem, $items): bool
     {
@@ -78,7 +68,7 @@ class OrderEditor
         foreach ($items as $item) {
             if ($product === $item->getProduct()) {
                 if(!$product->setQuantityInStock($product->getQuantityInStock() - ($item->getQuantity() - $originalItem->getQuantity()))) {
-                    $this->setError($item);
+                    $this->setError($item, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
                 }
                 return true;
             }
@@ -98,19 +88,13 @@ class OrderEditor
     }
 
     // TODO refactor this
-    public function handleEdit(Order $order, FormInterface $form): bool
+    private function handleEdit($items): bool
     {
-        $this->checkTotal($order, $form);
-
-        // extract products sold(in order_new) OR needed modification after order_edit
-        // we have modified order and items here
-        $items = $order->getCart()->getItems();
-
         foreach ($this->originalItems as $originalItem) {
             if (!$this->contains($originalItem, $items)) {
                 $product = $originalItem->getProduct();
                 if(!$product->setQuantityInStock($product->getQuantityInStock() + $originalItem->getQuantity())) {
-                    $this->setError($originalItem);
+                    $this->setError($originalItem, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
                 }
             }
         }
@@ -119,8 +103,69 @@ class OrderEditor
             if (!$this->containsNewInOld($item, $this->originalItems)) {
                 $product = $item->getProduct();
                 if(!$product->setQuantityInStock($product->getQuantityInStock() - $item->getQuantity())) {
-                    $this->setError($item);
+                    $this->setError($item, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
                 }
+            }
+        }
+
+        if (!$this->errorMessages) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function handle(Order $order, FormInterface $form): bool
+    {
+        $this->checkTotal($order, $form);
+
+        $items = $order->getCart()->getItems();
+
+        if ($order->getId()) {
+            // action edit
+            return $this->handleEdit($items);
+        }
+
+        // action new
+        return $this->handleNew($items);
+    }
+
+    /**
+     * order_new
+     *
+     * returns false if violated PositiveOrZero constraint of product.quantityInStock field
+     * make response in controller for this
+     */
+    private function handleNew($items): bool
+    {
+        // reduce product stock quantity by product item quantity sold in order
+        foreach ($items as $item) {
+            $quantity = $item->getQuantity();
+            $product = $item->getProduct();
+            if (!$product->setQuantityInStock($product->getQuantityInStock() - $quantity)) {
+                $this->setError($item, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
+            }
+        }
+
+        if (!$this->errorMessages) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * PositiveOrZero quantityInStock violation can happen if cartItem.quantity is big negative for some reason
+     * if happens - redirect to order edit view in controller
+     */
+    public function cancel(Order $order): bool
+    {
+        $items = $order->getCart()->getItems();
+        foreach ($items as $item) {
+            $quantity = $item->getQuantity();
+            $product = $item->getProduct();
+            if (!$product->setQuantityInStock($product->getQuantityInStock() + $quantity)) {
+                $this->setError($item, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
             }
         }
 
@@ -141,63 +186,36 @@ class OrderEditor
         }
     }
 
-    /**
-     * order_new
-     *
-     * returns false if violated non-negative constraint of product.quantityInStock field
-     * make response in controller for this
-     */
-    public function handleNew(Order $order, FormInterface $form): bool
+    const ERROR_ORDER_NOT_BLANK = 'NotBlank';
+    const ERROR_CART_ITEM_POSITIVE = 'Positive';
+    const ERROR_CART_ITEM_POSITIVE_OR_ZERO = 'PositiveOrZero';
+
+    public function setError(CartItem|Order $obj, string $error): void
     {
-        $this->checkTotal($order, $form);
-
-        // extract products sold(in order_new)
-        $items = $order->getCart()->getItems();
-        // reduce product stock quantity by product item quantity sold in order
-        foreach ($items as $item) {
-            if (!$this->sell($item)) {
-                $this->setError($item);
-            }
-        }
-
-        if (!$this->errorMessages) {
-            return true;
-        }
-
-        return false;
+        $this->errorMessages['items'][] = $error
+            . ' violation @ '
+            . $obj
+        ;
     }
 
     /**
-     * $product->setQuantityInStock(int n) returns false if n is negative and returns true if success
+     * order finish action is disallowed if order.cart is empty
+     * or if any cart.cartItem.quantity is <= 0
      *
-     * sell($cartItem) returns false if setQuantityInStock(n) returned false
-     * that means we violated entity logic and failed to update product.quantityInStock field
-     * that is good time for throw or response
+     * only order with order.status==in_progress should be here
+     * accordingly to restrictions in View
      */
-    public function sell(CartItem $cartItem): bool
-    {
-        $itemProduct = $cartItem->getProduct();
-        $quantitySold = $cartItem->getQuantity();
-
-        if ($itemProduct->setQuantityInStock($itemProduct->getQuantityInStock() - $quantitySold)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * PositiveOrZero quantityInStock violation can happen if cartItem.quantity is big negative for some reason
-     * if happens - redirect to order edit view in controller
-     */
-    public function cancel(Order $order): bool
+    public function finish(Order $order): bool
     {
         $items = $order->getCart()->getItems();
+
+        if ($items->isEmpty()) {
+            $this->setError($order, self::ERROR_ORDER_NOT_BLANK);
+        }
+
         foreach ($items as $item) {
-            $quantity = $item->getQuantity();
-            $product = $item->getProduct();
-            if (!$product->setQuantityInStock($product->getQuantityInStock() + $quantity)) {
-                $this->setError($item);
+            if ($item->getQuantity() <= 0) {
+                $this->setError($item, self::ERROR_CART_ITEM_POSITIVE);
             }
         }
 
