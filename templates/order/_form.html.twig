@@ -1,12 +1,10 @@
 {{ form_start(form) }}
-
-    {{ form_start(form) }}
-    {{ form_row(form.customer) }}
-    {{ form_row(form.status) }}
-    {{ form_row(form.spreadsheetFilename) }}
-
+{{ form_row(form.customer) }}
+{{ form_row(form.status) }}
+{{ form_row(form.spreadsheetFilename) }}
 {{ form_row(form.total) }}
 {{ form_row(form.info) }}
+
 <button type="submit" id="order_form_submit" class="btn btn-primary">{{ button_label|default('Submit order') }}</button>
 
 {% for type, messages in app.flashes %}
@@ -24,6 +22,6 @@
     {% endfor %}
 </div>
 
-<button type="button" id="order_form_add_button" class="btn_add_item btn btn-light" data-collection-holder-class ="items">Add product</button>
+<button type="button" id="order_form_add_button" class="btn btn-light btn_add_item" data-collection-holder-class="items">Add product</button>
 
 {{ form_end(form) }}

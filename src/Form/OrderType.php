@@ -2,9 +2,12 @@
 
 namespace App\Form;
 
+use App\Entity\Cart;
 use App\Entity\Customer;
 use App\Entity\Order;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -45,10 +48,23 @@ class OrderType extends AbstractType
             ->add('info', TextareaType::class, [
                 'required' => false,
             ])
-            ->add('cart', OrderCartType::class, [
-                'mapped' => true,
-                'required' => true,
-            ])
+            ->add(
+                $builder->create('cart', FormType::class, [
+                    'data_class' => Cart::class,
+                    'mapped' => true,
+                    'required' => true,
+                    ])
+                    ->add('items', CollectionType::class, [
+                        'entry_type' => OrderCartItemType::class,
+                        'entry_options' => [
+                            'label' => false,
+                        ],
+                        'label' => false,
+                        'allow_add' => true,
+                        'allow_delete' => true,
+                        'by_reference' => false,
+                    ])
+            )
         ;
     }
 
