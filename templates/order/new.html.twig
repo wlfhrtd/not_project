@@ -9,7 +9,7 @@
             // Get the container (div/ul/table/form-group) that holds the collection of items
             let $collectionHolder = $('div.items');
             // prepare view for re-loaded entity
-            $collectionHolder.find('div.justify-content-start').each(function (index, item) {
+            $collectionHolder.find('.orderCartItem').each(function (index, item) {
                 itemTotal(index, item); // item_total_price calc; all required fields loaded from backend
 
                 addCalcItemPrice($(this));
@@ -22,7 +22,7 @@
             count the current form inputs we have (e.g. 2; 0 for action new) in container
             use that as the new index when inserting a new item
              */
-            $collectionHolder.data('index', $collectionHolder.find('input').length);
+            $collectionHolder.data('index', $collectionHolder.find('.orderCartItem').length);
 
             $('body').on('click', '.btn_add_item', function(e) {
                 let $collectionHolderClass = $(e.currentTarget).data('collectionHolderClass');
@@ -64,7 +64,7 @@
             // increase the index with one for the next item
             $collectionHolder.data('index', index + 1);
             // display the form on the page with desired tag, before the btn_add_item
-            let $newFormItem = $('<p></p>').append(newForm);
+            let $newFormItem = $(newForm);
 
             addCalcItemPrice($newFormItem);
 

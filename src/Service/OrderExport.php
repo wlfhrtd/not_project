@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Order;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\Filesystem\Exception\IOException;
 
@@ -69,7 +70,7 @@ class OrderExport
 
             $this->writer->save($this->savePath . $fileName);
 
-        } catch (\PhpOffice\PhpSpreadsheet\Writer\Exception) {
+        } catch (Exception) {
 
             throw new IOException('PhpOfficeException: Unable to write file || ZipStream: Overflow exception');
         }

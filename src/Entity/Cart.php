@@ -36,19 +36,13 @@ class Cart
         return $this->items;
     }
 
-    public function addItem(CartItem $item): self
+    public function addItem(CartItem $item): bool
     {
-        // default
-        /**
-        if (!$this->items->contains($item)) {
-        $this->items[] = $item;
-        $item->setCart($this);
-        }
-         */
-
-        // suitable for php on-site public cart (like in every shop)
-        // but in real application such implicit 'updates' should not happen
-        // TODO do something with this (js check in view, but ensure in backend after submit)
+        /*
+         * 'silent update'
+         * suitable for php on-site public cart (like in every shop)
+         * but in real application such implicit 'updates' should not happen
+         *
         foreach ($this->getItems() as $existingItem) {
             // The item already exists, update the quantity
             if ($existingItem->equals($item)) {
@@ -63,6 +57,21 @@ class Cart
         $item->setCart($this);
 
         return $this;
+        */
+
+        /*
+         * 'silent fail'
+         */
+        foreach ($this->getItems() as $existingItem) {
+            if ($existingItem->equals($item)) {
+                return false;
+            }
+        }
+
+        $this->items[] = $item;
+        $item->setCart($this);
+
+        return true;
     }
 
     public function removeItem(CartItem $item): self

@@ -17,13 +17,6 @@ class OrderCartType extends AbstractType
                 'entry_type' => OrderCartItemType::class,
                 'entry_options' => [
                     'label' => false,
-                    'attr' => [
-                        'class' => 'd-flex justify-content-start',
-                    ],
-                ],
-                'attr' => [
-                    'class' => 'items',
-                    'data-prototype' => 'form_widget(orderForm.cart.items.vars.prototype)|e',
                 ],
                 'label' => false,
                 'allow_add' => true,

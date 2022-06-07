@@ -9,7 +9,7 @@
             // Get the container (div/ul/table/form-group) that holds the collection of items
             let $collectionHolder = $('div.items');
             // prepare view for loaded entity
-            $collectionHolder.find('div.justify-content-start').each(function (index, item) {
+            $collectionHolder.find('fieldset').each(function (index, item) {
                 itemTotal(index, item); // item_total_price calc; all required fields loaded from backend
 
                 addCalcItemPrice($(this));

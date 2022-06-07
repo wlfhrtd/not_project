@@ -10,7 +10,21 @@ class OrderEditor
 {
     private $originalItems; // contains order.cart.items 'backup' to handle order edit action
     private $errorMessages; // if returns null handle_ methods return true
-    
+
+    const ERROR_ORDER_NOT_BLANK = 'NotBlank';
+    const ERROR_CART_ITEM_POSITIVE = 'Positive';
+    const ERROR_CART_ITEM_POSITIVE_OR_ZERO = 'PositiveOrZero';
+    const ERROR_CART_ITEM_UNIQUE = 'Unique';
+    const ERROR_ORDER_TOTAL_IDENTICAL_TO = 'IdenticalTo';
+
+    public function setError(CartItem|Order|string $obj, string $error): void
+    {
+        $this->errorMessages[] = $error
+            . ' violation @ '
+            . $obj
+        ;
+    }
+
     public function getErrorMessages(): array
     {
         return $this->errorMessages;
@@ -20,7 +34,11 @@ class OrderEditor
     {
         return $this->errorMessages = null;
     }
-    
+
+    /**
+     * populates several form values to reduce ajax requests number
+     * also helps with order action edit
+     */
     public function populateForm (Order $order, $form): void
     {
         /*
@@ -60,50 +78,79 @@ class OrderEditor
         }
     }
 
-    // TODO REFACTOR ALL I GUESS IT'S GONNA BE X1 2-DIMENSIONAL =I =J TRAVERSE AND X1 =I REGULAR
-    public function contains($originalItem, $items): bool
+    public function contains(CartItem $needle, $items)
     {
-        // TODO refactor: not only checks but does something as mutator
-        $product = $originalItem->getProduct();
         foreach ($items as $item) {
-            if ($product === $item->getProduct()) {
-                if(!$product->setQuantityInStock($product->getQuantityInStock() - ($item->getQuantity() - $originalItem->getQuantity()))) {
-                    $this->setError($item, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
-                }
-                return true;
+            if ($needle->equals($item)) {
+                return $item;
             }
         }
         return false;
     }
 
-    public function containsNewInOld($item, $originalItems): bool
-    {
-        $product = $item->getProduct();
-        foreach ($originalItems as $originalItem) {
-            if ($product === $originalItem->getProduct()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // TODO refactor this
     private function handleEdit($items): bool
     {
+        // traverse original items
         foreach ($this->originalItems as $originalItem) {
-            if (!$this->contains($originalItem, $items)) {
-                $product = $originalItem->getProduct();
-                if(!$product->setQuantityInStock($product->getQuantityInStock() + $originalItem->getQuantity())) {
+            if (!$newItem = $this->contains($originalItem, $items)) {
+                // return products if !contains
+                if(!$originalItem->getProduct()->setQuantityInStock($originalItem->getProduct()->getQuantityInStock() + $originalItem->getQuantity())) {
                     $this->setError($originalItem, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
+                }
+            } else {
+                // calc&apply changes
+                if(!$originalItem->getProduct()->setQuantityInStock($originalItem->getProduct()->getQuantityInStock() - ($newItem->getQuantity() - $originalItem->getQuantity()))) {
+                    $this->setError($newItem, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
                 }
             }
         }
 
+        // traverse new items
         foreach ($items as $item) {
-            if (!$this->containsNewInOld($item, $this->originalItems)) {
-                $product = $item->getProduct();
-                if(!$product->setQuantityInStock($product->getQuantityInStock() - $item->getQuantity())) {
+            if (!$this->contains($item, $this->originalItems)) {
+                if(!$item->getProduct()->setQuantityInStock($item->getProduct()->getQuantityInStock() - $item->getQuantity())) {
                     $this->setError($item, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
+                }
+            }
+        }
+
+        if (!$this->errorMessages) {
+            return true;
+        }
+
+        return false;
+    }
+
+    // TODO deduplication items by product criteria in 1) js 2) backend
+    // TODO add validation in entities (setters, like for product.setQUantityinstock)
+    // TODO refactor js, figure out whats with indexes, test more intensive (order cart items >3, buggy)
+    // TODO move stuff from forms to templates
+    // TODO admin, security
+    // TODO learn locks, shared resources, optimistic, pessimistic etc
+    // TODO homepage
+    // TODO try to get rid of CartType - EntityType form?
+
+
+    // TODO similar js deduplication to prevent submit
+    /**
+     * cartItem duplication by product is not allowed and silently fails
+     * cart->addItem() return false and does nothing if duplication occurs
+     * so duplication happens only in form but not in order.cart entity
+     * that's why have to mess with form directly
+     */
+    public function checkFormDuplication(FormInterface $form): bool
+    {
+        $itemsForm = $form->get('cart')->get('items'); // possible nulls if index is wrong (e.g. 0, 4 and missing 1,2,3 so foreach will fail)
+        $items = [];
+        foreach ($itemsForm as $itemForm) {
+            if ($itemForm) {
+                $items[] = $itemForm->getData();
+            }
+        }
+        for ($i = 0; $i < count($items); $i++) {
+            for ($j = $i + 1; $j < count($items); $j++) {
+                if ($items[$i]->equals($items[$j])) {
+                    $this->setError($items[$j], self::ERROR_CART_ITEM_UNIQUE);
                 }
             }
         }
@@ -117,17 +164,32 @@ class OrderEditor
 
     public function handle(Order $order, FormInterface $form): bool
     {
-        $this->checkTotal($order, $form);
+        if (!$this->checkFormDuplication($form)) {
+            return false;
+        }
 
         $items = $order->getCart()->getItems();
 
         if ($order->getId()) {
             // action edit
-            return $this->handleEdit($items);
+            if (!$this->handleEdit($items)) {
+                return false;
+            }
         }
 
         // action new
-        return $this->handleNew($items);
+        if (!$order->getId()) {
+            // action new
+            if (!$this->handleNew($items)) {
+                return false;
+            }
+        }
+
+        if (!$this->checkTotal($order, $form)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -140,9 +202,7 @@ class OrderEditor
     {
         // reduce product stock quantity by product item quantity sold in order
         foreach ($items as $item) {
-            $quantity = $item->getQuantity();
-            $product = $item->getProduct();
-            if (!$product->setQuantityInStock($product->getQuantityInStock() - $quantity)) {
+            if (!$item->getProduct()->setQuantityInStock($item->getProduct()->getQuantityInStock() - $item->getQuantity())) {
                 $this->setError($item, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
             }
         }
@@ -162,9 +222,7 @@ class OrderEditor
     {
         $items = $order->getCart()->getItems();
         foreach ($items as $item) {
-            $quantity = $item->getQuantity();
-            $product = $item->getProduct();
-            if (!$product->setQuantityInStock($product->getQuantityInStock() + $quantity)) {
+            if (!$item->getProduct()->setQuantityInStock($item->getProduct()->getQuantityInStock() + $item->getQuantity())) {
                 $this->setError($item, self::ERROR_CART_ITEM_POSITIVE_OR_ZERO);
             }
         }
@@ -176,26 +234,21 @@ class OrderEditor
         return false;
     }
 
-    public function checkTotal(Order $order, FormInterface $form): void
+    public function checkTotal(Order $order, FormInterface $form): bool
     {
         $totalBack = $order->getCart()->getTotal();
         $totalFront = $form->get('total')->getData();
 
         if ($totalBack != $totalFront) {
-            $this->errorMessages['total'] = 'Order total price mismatch! Front: ' . $totalFront . ' Back: ' . $totalBack;
+            $errorMessage = 'Form total price: ' . $totalFront . '; Backend total price: ' . $totalBack;
+            $this->setError($errorMessage, self::ERROR_ORDER_TOTAL_IDENTICAL_TO);
         }
-    }
 
-    const ERROR_ORDER_NOT_BLANK = 'NotBlank';
-    const ERROR_CART_ITEM_POSITIVE = 'Positive';
-    const ERROR_CART_ITEM_POSITIVE_OR_ZERO = 'PositiveOrZero';
+        if (!$this->errorMessages) {
+            return true;
+        }
 
-    public function setError(CartItem|Order $obj, string $error): void
-    {
-        $this->errorMessages['items'][] = $error
-            . ' violation @ '
-            . $obj
-        ;
+        return false;
     }
 
     /**
