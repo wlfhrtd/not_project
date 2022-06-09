@@ -16,10 +16,14 @@
     {% endfor %}
 {% endfor %}
 
-<div id="order_cart_items" class="items" data-prototype="{{form_row(form.cart.items.vars.prototype, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' } })|e}}">
+<div id="order_cart_items"
+     class="items"
+     data-prototype="{{ form_row(form.cart.items.vars.prototype, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' }})|e}}">
+
     {% for item in form.cart.items %}
         {{ form_row(item, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' } }) }}
     {% endfor %}
+
 </div>
 
 <button type="button" id="order_form_add_button" class="btn btn-light btn_add_item" data-collection-holder-class="items">Add product</button>

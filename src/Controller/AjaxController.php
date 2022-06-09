@@ -80,4 +80,22 @@ class AjaxController extends AbstractController
             'quantityInStock' => $quantityInStock,
         ]);
     }
+
+    #[Route('/find_product_one_batch', name: 'find_product_one_batch')]
+    public function findProductOneBatch(Request $request, ProductRepository $productRepository)
+    {
+        $batchId = $request->get('batchId');
+        $products = [];
+        foreach ($batchId as $id) {
+            $products[] = $productRepository->findOneByIdHideHidden($id);
+        }
+        $response = [];
+        foreach ($products as $product) {
+            $response[] = [
+                'price' => $product->getPrice(),
+                'quantityInStock' => $product->getQuantityInStock(),
+            ];
+        }
+        return new JsonResponse($response);
+    }
 }

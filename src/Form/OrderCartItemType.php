@@ -27,7 +27,7 @@ class OrderCartItemType extends AbstractType
                 'cache_timeout' => 60000,
                 'mapped' => true,
                 'required' => true,
-                'width' => 300,
+                'width' => 400,
                 'label' => 'Product',
                 'minimum_input_length' => 1,
                 'primary_key' => 'id',
@@ -45,28 +45,23 @@ class OrderCartItemType extends AbstractType
             ])
             ->add('in_stock', NumberType::class, [
                 'mapped' => false,
-                'disabled' => true,
                 'attr' => [
                     'class' => 'quantity_in_stock',
+                    'readonly' => true,
                 ],
             ])
             ->add('price', TextType::class, [
                 'mapped' => false,
-                'disabled' => true,
                 'attr' => [
                     'class' => 'product_price',
+                    'readonly' => true,
                 ],
             ])
             ->add('item_total_price', NumberType::class, [
                 'mapped' => false,
-                'disabled' => true,
                 'attr' => [
                     'class' => 'item_total_price',
-                ],
-            ])
-            ->add('delete', ButtonType::class, [
-                'attr' => [
-                    'class' => 'btn btn-danger btn_delete',
+                    'readonly' => true,
                 ],
             ])
         ;

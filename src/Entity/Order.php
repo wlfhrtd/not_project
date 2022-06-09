@@ -52,6 +52,11 @@ class Order
 
     public function __toString()
     {
+        return $this->id;
+    }
+
+    public function toLongString(): string
+    {
         return 'Order id: ' . $this->getId() . '; order.cart id: ' . $this->getCart()->getId();
     }
 

@@ -2,18 +2,15 @@
 
 namespace App\Controller;
 
-use App\Entity\CartItem;
 use App\Entity\Order;
 use App\Form\OrderType;
 use App\Form\PaginationType;
 use App\Repository\OrderRepository;
-use App\Repository\ProductRepository;
 use App\Service\OrderEditor;
 use App\Service\OrderExport;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -65,7 +62,7 @@ class OrderController extends AbstractController
                 }
                 $orderEditor->clearErrorMessages();
                 $form = $this->createForm(OrderType::class, $order);
-                $orderEditor->populateForm($order, $form);
+                // $orderEditor->populateForm($order); RIP
                 $form->handleRequest($request);
                 return $this->renderForm('order/new.html.twig', [
                     'order' => $order,
@@ -98,8 +95,8 @@ class OrderController extends AbstractController
     public function edit(Request $request, Order $order, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
     {
         $form = $this->createForm(OrderType::class, $order);
-        // load values from DB (ajax handled in order_new)
-        $orderEditor->populateForm($order, $form);
+        // load values from DB (ajax handled in order_new) RIP
+        $orderEditor->backupOriginalItems($order);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -111,7 +108,7 @@ class OrderController extends AbstractController
                 }
                 $orderEditor->clearErrorMessages();
                 $form = $this->createForm(OrderType::class, $order);
-                $orderEditor->populateForm($order, $form);
+                // $orderEditor->populateForm($order); RIP
                 $form->handleRequest($request);
                 return $this->renderForm('order/edit.html.twig', [
                     'order' => $order,

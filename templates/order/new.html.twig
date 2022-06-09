@@ -6,77 +6,123 @@
     {{ parent() }}
     <script>
         $(document).ready(function () {
-            // Get the container (div/ul/table/form-group) that holds the collection of items
-            let $collectionHolder = $('div.items');
-            // prepare view for re-loaded entity
-            $collectionHolder.find('.orderCartItem').each(function (index, item) {
-                itemTotal(index, item); // item_total_price calc; all required fields loaded from backend
-
-                addCalcItemPrice($(this));
-                addItemFormDeleteLink($(this));
-                addAjaxProduct($(this));
-                $(this).find('.item_quantity').attr('readonly', false);
-            })
-
+            // validation
+            $('form[name="order"]').attr('onsubmit', "return validateCartItems(event);");
+            /*
+            container:
+            <div id="order_cart_items" class="items" data-prototype=...>
+            shortcut:
+            <button type="button" id="order_form_add_button" class="btn btn-light btn_add_item" data-collection-holder-class="items"...>
+             */
+            let $collectionHolder = $('.items');
+            let items = $collectionHolder.find('.orderCartItem');
+            // batch fetching data for cart if not empty
+            if (items.length > 0) {
+                let batchId = []; // contains ids of selected products
+                items.each(function (index, item) {
+                    // product id
+                    batchId[index] = $(item).find('select').val();
+                })
+                /*
+                data loader
+                triggers:
+                .item_quantity on change - calc item_total_price
+                .select2entity on select2:select - remove readonly attr from .item_quantity
+                 */
+                AjaxProductBatch(batchId, items);
+            }
+            // prepare view
+            items.each(function (index, item) {
+                /*
+                triggers:
+                .item_quantity on keyup on change - calc item_total_price, orderTotal()
+                 */
+                addCalcItemPrice($(item));
+                /*
+                btn_delete_item layout
+                triggers:
+                $formItem on btn click - remove() form, orderTotal()
+                 */
+                addBtnDeleteItem($(item));
+                /*
+                data loader
+                triggers:
+                .select on change - .item_quantity change >>>> calc item_total_price, orderTotal()
+                 */
+                addAjaxProduct($(item));
+                // select2 handle & orderTotal()
+                /*
+                select2 loader
+                triggers:
+                .select2entity on select2:select - remove readonly attr from .item_quantity
+                               on select2:clearing - set readonly attr for .item_quantity,
+                                                     clear item form fields, orderTotal()
+                 */
+                select2init($(item));
+            });
             /*
             count the current item forms in container
-            use that as the new index when inserting a new item form
+            use this number as new index when insert new item form
              */
-            $collectionHolder.data('index', $collectionHolder.find('.orderCartItem').length);
+            $collectionHolder.data('index', items.length);
 
             $('body').on('click', '.btn_add_item', function(e) {
+                // set as attr 'data' in btn_add_item
                 let $collectionHolderClass = $(e.currentTarget).data('collectionHolderClass');
                 // add a new item form
                 addFormToCollection($collectionHolderClass);
             })
         })
 
-        function itemTotal(index, item) {
-            let price = parseFloat($(item).find('#order_cart_items_' + index + '_price').val());
-            let quantity = parseInt($(item).find('#order_cart_items_' + index + '_quantity').val());
-            if (price >=0 && quantity >= 0) {
-                $(item).find('#order_cart_items_' + index + '_item_total_price').val(price * quantity);
-            }
-        }
-
         function addFormToCollection($collectionHolderClass) {
-            // Get the container that holds the collection of items
+            // container
             let $collectionHolder = $('.' + $collectionHolderClass);
-            // Get the data-prototype
+            // prototype (set as attr 'data' in div.items)
             let prototype = $collectionHolder.data('prototype');
-            // get the new index
+            // get the new index (set in document onready)
             let index = $collectionHolder.data('index');
 
             let newForm = prototype;
-
             /*
-            need this if haven't set 'label' => false for entries in form
-            replace '__name__label__' in the prototype's HTML to
-            instead be a number based on how many items we have
-            newForm = newForm.replace(/__name__label__/g, index);
-             */
-
-            /*
-            replace '__name__' in the prototype's HTML to
-            instead be a number based on how many items we have
+            replace __name__ (or __name__label__) with index number
              */
             newForm = newForm.replace(/__name__/g, index);
             // increase the index with one for the next item
             $collectionHolder.data('index', index + 1);
-            // display the form on the page with desired tag, before the btn_add_item
+            // wrap with tag if need e.g.: =$('<li></li>').append(newForm)
             let $newFormItem = $(newForm);
 
             addCalcItemPrice($newFormItem);
 
-            addItemFormDeleteLink($newFormItem);
+            addBtnDeleteItem($newFormItem, index);
 
             addAjaxProduct($newFormItem);
 
-            /*
-            .select2entity() call needed when using collections and/or prototype;
-            also readonly handling just to prevent some NaNs
-             */
-            let $select2field = $newFormItem.find('.select2entity').last().select2entity();
+            select2init($newFormItem);
+
+            applyTheme($newFormItem);
+
+            $collectionHolder.append($newFormItem);
+        }
+
+        /*
+        not needed when traverse collection in document.onready
+        but for new forms in collection
+        styling should be done for prototype too
+        so there is the same code in twig template
+        (data-prototype in div.items)
+        */
+        function applyTheme($newFormItem) {
+            $newFormItem.attr('class' , 'd-flex justify-content-start orderCartItem');
+        }
+
+        /*
+        accordingly to documentation for every select2 field
+        .select2entity() call is needed when using collections and/or prototype;
+        also readonly handling just to prevent some NaNs & orderTotal()
+        */
+        function select2init($newFormItem) {
+            let $select2field = $newFormItem.find('.select2entity').select2entity();
             $select2field.on('select2:select', function () {
                 $newFormItem.find('.item_quantity').attr('readonly', false);
             });
@@ -86,23 +132,23 @@
                 $newFormItem.find('.quantity_in_stock').val(null);
                 $newFormItem.find('.product_price').val(null);
                 $newFormItem.find('.item_total_price').val(null);
+
                 orderTotal();
             })
-            // add the new form at the end of the container
-            $collectionHolder.append($newFormItem);
         }
 
-        function addItemFormDeleteLink($newFormItem) {
-            // let $removeFormButton = $('<button type="button" class="btn btn-danger">Delete</button>');
-            // $newFormItem.append($removeFormButton);
-
-            $newFormItem.find('.btn_delete').on('click', function() {
-                // recalculate order total after item remove
+        // add btn_delete_item
+        function addBtnDeleteItem($newFormItem, index) {
+            let $btnDeleteItem = $('<div class="mb-3"><button type="button" id="order_cart_items_' + index + '_delete" name="order[cart][items][' + index + '][delete]" class="btn btn-danger btn_delete_item">Delete</button></div>');
+            $newFormItem.append($btnDeleteItem);
+            $btnDeleteItem.on('click', function() {
                 $newFormItem.remove();
+                // recalculate order total after item remove
                 orderTotal();
             });
         }
 
+        // loads data with select2 onchange, triggers item total price calc
         function addAjaxProduct($newFormItem) {
             $newFormItem.find('select').on('change', function() {
                 let id = $newFormItem.find('select').val();
@@ -112,12 +158,34 @@
                     url     : "{{ path('find_product_one') }}",
                     dataType:   'json',
                     data    :   dataId,
-                    success:function(data){
+                    success:function(data) {
                         $newFormItem.find('.product_price').val(data.price);
                         $newFormItem.find('.quantity_in_stock').val(data.quantityInStock);
+                        // trigger addCalcItemPrice()
+                        $newFormItem.find('.item_quantity').trigger('change');
                     }
                 });
             });
+        }
+
+        function AjaxProductBatch(batchId, items) {
+            let dataBatchId = { 'batchId': batchId };
+            $.ajax({
+                type: 'GET',
+                url: "{{ path('find_product_one_batch') }}",
+                dataType: 'json',
+                data: dataBatchId,
+                success: function (data) {
+                    items.each(function (index, item) {
+                        $(item).find('.product_price').val(data[index].price);
+                        $(item).find('.quantity_in_stock').val(data[index].quantityInStock);
+                        // trigger addCalcItemPrice()
+                        $(item).find('.item_quantity').trigger('change');
+                        // trigger .item_quantity attr readonly remove
+                        $(item).find('.select2entity').trigger('select2:select');
+                    })
+                }
+            })
         }
 
         // order total price
@@ -131,8 +199,9 @@
             $('#order_total').val(totalOrderPrice);
         }
 
+        // input sanitize, item total price calc, orderTotal()
         function addCalcItemPrice($newFormItem) {
-            $newFormItem.find('.item_quantity').on('change', function () {
+            $newFormItem.find('.item_quantity').on('keyup change', function () {
                 let price = parseFloat($newFormItem.find('.product_price').val());
                 let quantity = parseInt($newFormItem.find('.item_quantity').val());
                 let stock = parseInt($newFormItem.find('.quantity_in_stock').val());
@@ -155,11 +224,57 @@
             });
         }
 
+        function validateCartItems(event) {
+            event.preventDefault();
+
+            let items = $('div.items').find('select');
+            let productIDs = [];
+
+            items.each(function (index, item) {
+                productIDs.push($(item).val());
+            });
+
+            for (let i = 0; i < productIDs.length; i++) {
+                for (let j = i + 1; j <productIDs.length; j++) {
+                    if (productIDs[i] === productIDs[j]) {
+                        let name = $(items[j]).select2('data')[0]['text'];
+                        setError(name, j, ERROR_CART_ITEM_UNIQUE);
+                    }
+                }
+            }
+
+            if (errorMessages.length > 0) {
+                showErrors(errorMessages);
+                errorMessages.length = 0;
+                return false;
+            }
+
+            event.currentTarget.submit();
+        }
+
+
+        const ERROR_CART_ITEM_UNIQUE = 'Unique';
+        let errorMessages = [];
+
+        function setError($obj, pos, $error)
+        {
+            errorMessages.push({'pos': pos, 'text': $error + ' violation @ ' + $obj});
+        }
+
+        function showErrors(errorMessages) {
+            errorMessages.forEach(function (error) {
+                let $alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">'
+                    + error.text
+                    + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><span aria-hidden="true"></span></button></div>');
+                let $cartItems = $('.orderCartItem');
+                $alert.insertBefore($($cartItems[error.pos]));
+            });
+        }
+
     </script>
 {% endblock%}
 
 {% block body %}
-
     <h1>Create new Order</h1>
 
     {{ include('order/_form.html.twig') }}

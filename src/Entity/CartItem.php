@@ -34,6 +34,11 @@ class CartItem
 
     public function __toString()
     {
+        return $this->id;
+    }
+
+    public function toLongString(): string
+    {
         return 'Item: '
             . $this->getProduct()->getName()
             . '; quantity: ' . $this->getQuantity()

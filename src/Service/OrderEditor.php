@@ -19,6 +19,14 @@ class OrderEditor
 
     public function setError(CartItem|Order|string $obj, string $error): void
     {
+        if ($obj instanceof CartItem || $obj instanceof Order) {
+            $this->errorMessages[] = $error
+                . ' violation @ '
+                . $obj->toLongString()
+            ;
+            return;
+        }
+
         $this->errorMessages[] = $error
             . ' violation @ '
             . $obj
@@ -39,7 +47,7 @@ class OrderEditor
      * populates several form values to reduce ajax requests number
      * also helps with order action edit
      */
-    public function populateForm (Order $order, $form): void
+    public function populateForm (Order $order): void
     {
         /*
          * new order is not persisted yet and has no id => don't need backup for action new
@@ -51,30 +59,35 @@ class OrderEditor
             $this->backupOriginalItems($order);
         }
 
+        /* RIP
         // to reduce number of ajax requests
         $items = $order->getCart()->getItems();
         for ($i = 0; $i < count($items); $i++) {
             $form['cart']['items'][$i]['in_stock']->setData($items[$i]->getProduct()->getQuantityInStock());
             $form['cart']['items'][$i]['price']->setData($items[$i]->getProduct()->getPrice());
-        }
+        }*/
+
     }
 
     /**
      * backups items from loaded order to handle edit action later by comparison
      */
-    private function backupOriginalItems(Order $order): void
+    public function backupOriginalItems(Order $order): void
     {
-        $this->originalItems = [];
+        if ($order->getId() && !$this->originalItems) {
 
-        foreach ($order->getCart()->getItems() as $item) {
-            /*
-             * new() for 'really' original items
-             * can get just only pointers from $order directly that will lead to changes of original items on order edit
-             * (they will be the same as in modified order)
-             */
-            $this->originalItems[] = (new CartItem())
-                ->setProduct($item->getProduct())
-                ->setQuantity($item->getQuantity());
+            $this->originalItems = [];
+
+            foreach ($order->getCart()->getItems() as $item) {
+                /*
+                 * new() for 'really' original items
+                 * can get just only pointers from $order directly that will lead to changes of original items on order edit
+                 * (they will be the same as in modified order)
+                 */
+                $this->originalItems[] = (new CartItem())
+                    ->setProduct($item->getProduct())
+                    ->setQuantity($item->getQuantity());
+            }
         }
     }
 
@@ -138,7 +151,7 @@ class OrderEditor
      * so duplication happens only in form but not in order.cart entity
      * that's why have to mess with form directly
      */
-    public function checkFormDuplication(FormInterface $form): bool
+    private function checkFormDuplication(FormInterface $form): bool
     {
         $itemsForm = $form->get('cart')->get('items'); // possible nulls if index is wrong (e.g. 0, 4 and missing 1,2,3 so foreach will fail)
         $items = [];
@@ -234,7 +247,7 @@ class OrderEditor
         return false;
     }
 
-    public function checkTotal(Order $order, FormInterface $form): bool
+    private function checkTotal(Order $order, FormInterface $form): bool
     {
         $totalBack = $order->getCart()->getTotal();
         $totalFront = $form->get('total')->getData();
