@@ -16,12 +16,7 @@ class ProductType extends AbstractType
     {
         $builder
             ->add('name')
-            ->add('quantityInStock',NumberType::class, [
-                'html5' => true,
-                'attr' => [
-                    'min' => 0,
-                ],
-            ])
+            ->add('quantityInStock',NumberType::class)
             ->add('description')
             ->add('price')
             ->add('imageFile', VichImageType::class, [

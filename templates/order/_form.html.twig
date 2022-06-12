@@ -1,8 +1,7 @@
 {{ form_start(form) }}
 {{ form_row(form.customer) }}
-{{ form_row(form.status) }}
-{{ form_row(form.spreadsheetFilename) }}
-{{ form_row(form.total) }}
+{{ form_row(form.status, { 'attr': { 'readonly': 'true' } }) }}
+{{ form_row(form.total, { 'attr': { 'readonly': 'true' } }) }}
 {{ form_row(form.info) }}
 
 <button type="submit" id="order_form_submit" class="btn btn-primary">{{ button_label|default('Submit order') }}</button>
@@ -29,10 +28,24 @@
 
 <div id="order_cart_items"
      class="items"
-     data-prototype="{{ form_widget(form.cart.items.vars.prototype, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' }})|e}}">
+     data-prototype="
+            {{ '<div class="d-flex justify-content-start orderCartItem">'|e }}
+            {{ form_row(form.cart.items.vars.prototype.product)|e}}
+            {{ form_row(form.cart.items.vars.prototype.quantity, { 'type': 'number', 'attr': { 'class': 'item_quantity', 'readonly': 'true', 'min': '0' } })|e}}
+            {{ form_row(form.cart.items.vars.prototype.in_stock, { 'attr': { 'class': 'quantity_in_stock', 'readonly': 'true' } })|e }}
+            {{ form_row(form.cart.items.vars.prototype.price, { 'attr': { 'class': 'product_price', 'readonly': 'true' } })|e }}
+            {{ form_row(form.cart.items.vars.prototype.item_total_price, { 'attr': { 'class': 'item_total_price', 'readonly': 'true' } })|e }}
+            {{ '</div>'|e }}
+     ">
 
     {% for item in form.cart.items | sort %}
-        {{ form_widget(item, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' } }) }}
+        <div class="d-flex justify-content-start orderCartItem">
+            {{ form_row(item.product) }}
+            {{ form_row(item.quantity, { 'type': 'number', 'attr': { 'class': 'item_quantity', 'readonly': 'true', 'min': '0' } }) }}
+            {{ form_row(item.in_stock, { 'attr': { 'class': 'quantity_in_stock', 'readonly': 'true' } }) }}
+            {{ form_row(item.price, { 'attr': { 'class': 'product_price', 'readonly': 'true' } }) }}
+            {{ form_row(item.item_total_price, { 'attr': { 'class': 'item_total_price', 'readonly': 'true' } }) }}
+        </div>
     {% endfor %}
 
 </div>

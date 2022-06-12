@@ -127,7 +127,6 @@ class SupplyManager
         $this->merge($itemsModified, $itemOrigMatch);
     }
 
-    // TODO move stuff from forms to templates
     // TODO admin, security
     // TODO learn locks, shared resources, optimistic, pessimistic etc
     // TODO homepage

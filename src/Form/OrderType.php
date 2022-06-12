@@ -32,18 +32,10 @@ class OrderType extends AbstractType
                 'required' => true,
                 'minimum_input_length' => 1,
             ])
-            ->add('status', TextType::class, [
-                'attr' => [
-                    'readonly' => true,
-                ],
-            ])
-            ->add('spreadsheetFilename')
+            ->add('status', TextType::class)
             ->add('total', TextType::class, [
                 'mapped' => true,
                 'required' => true,
-                'attr' => [
-                    'readonly' => true,
-                ]
             ])
             ->add('info', TextareaType::class, [
                 'required' => false,

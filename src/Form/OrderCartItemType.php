@@ -36,33 +36,15 @@ class OrderCartItemType extends AbstractType
             ->add('quantity', NumberType::class, [
                 'mapped' => true,
                 'required' => true,
-                'html5' => true,
-                'attr' => [
-                    'class' => 'item_quantity',
-                    'readonly' => true,
-                    'min' => 0,
-                ],
             ])
             ->add('in_stock', NumberType::class, [
                 'mapped' => false,
-                'attr' => [
-                    'class' => 'quantity_in_stock',
-                    'readonly' => true,
-                ],
             ])
             ->add('price', TextType::class, [
                 'mapped' => false,
-                'attr' => [
-                    'class' => 'product_price',
-                    'readonly' => true,
-                ],
             ])
-            ->add('item_total_price', NumberType::class, [
+            ->add('item_total_price', TextType::class, [
                 'mapped' => false,
-                'attr' => [
-                    'class' => 'item_total_price',
-                    'readonly' => true,
-                ],
             ])
         ;
     }
