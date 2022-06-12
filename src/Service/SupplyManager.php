@@ -128,8 +128,7 @@ class SupplyManager
     }
 
     // TODO admin, security
-    // TODO learn locks, shared resources, optimistic, pessimistic etc
-    // TODO homepage
+    // TODO add locks, version for optimistic, pessimistic postgres may be for order or product quantity
 
     public function manage(Order $order, string $action): bool
     {
