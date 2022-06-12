@@ -145,8 +145,7 @@ class OrderController extends AbstractController
     public function finish(Request $request, Order $order, OrderRepository $orderRepository, SupplyManager $supplyManager): Response
     {
         if ($this->isCsrfTokenValid('finish' . $order->getId(), $request->request->get('_token'))) {
-            // validation
-            if (!$supplyManager->finish($order)) {
+            if (!$supplyManager->manage($order, SupplyManager::ORDER_ACTION_FINISH)) {
                 $errorMessages = $supplyManager->getErrorMessages();
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
@@ -167,13 +166,9 @@ class OrderController extends AbstractController
     public function export(Request $request, Order $order, OrderRepository $orderRepository, OrderExport $orderExport): Response
     {
         if ($this->isCsrfTokenValid('export'.$order->getId(), $request->request->get('_token'))) {
-
             try {
-
                 $filename = $orderExport->export($order);
-
             } catch (IOException $e) {
-
                 throw new HttpException(418, "Unable to write file!" . $e->getMessage());
             }
 

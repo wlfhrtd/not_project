@@ -13,6 +13,7 @@ class SupplyManager
     const ORDER_ACTION_NEW = 'OrderActionNew';
     const ORDER_ACTION_CANCEL = 'OrderActionCancel';
     const ORDER_ACTION_EDIT = 'OrderActionEdit';
+    const ORDER_ACTION_FINISH = 'OrderActionFinish';
 
     const ERROR_ORDER_NOT_BLANK = 'NotBlank';
     const ERROR_CART_ITEM_POSITIVE = 'Positive';
@@ -133,13 +134,12 @@ class SupplyManager
 
     public function manage(Order $order, string $action): bool
     {
-        $items = $order->getCart()->getItems();
-
         try {
             match ($action) {
-                self::ORDER_ACTION_NEW => self::reduce($items),
-                self::ORDER_ACTION_CANCEL => self::increase($items),
-                self::ORDER_ACTION_EDIT => self::handleEdit($items),
+                self::ORDER_ACTION_NEW => self::reduce($order->getCart()->getItems()),
+                self::ORDER_ACTION_CANCEL => self::increase($order->getCart()->getItems()),
+                self::ORDER_ACTION_EDIT => self::handleEdit($order->getCart()->getItems()),
+                self::ORDER_ACTION_FINISH => self::finish($order),
             };
         } catch (\UnhandledMatchError $e) {
             dd($e);
@@ -208,7 +208,7 @@ class SupplyManager
      * order finish action is disallowed if order.cart is empty
      * or if any cart.cartItem.quantity is <= 0
      */
-    public function finish(Order $order): bool
+    private function finish(Order $order): void
     {
         $items = $order->getCart()->getItems();
 
@@ -221,11 +221,5 @@ class SupplyManager
                 $this->setError($item, self::ERROR_CART_ITEM_POSITIVE);
             }
         }
-
-        if (!$this->errorMessages) {
-            return true;
-        }
-
-        return false;
     }
 }
