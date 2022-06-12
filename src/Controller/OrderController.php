@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\FlockStore;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/order')]
@@ -166,14 +168,25 @@ class OrderController extends AbstractController
     public function export(Request $request, Order $order, OrderRepository $orderRepository, OrderExport $orderExport): Response
     {
         if ($this->isCsrfTokenValid('export'.$order->getId(), $request->request->get('_token'))) {
-            try {
-                $filename = $orderExport->export($order);
-            } catch (IOException $e) {
-                throw new HttpException(418, "Unable to write file!" . $e->getMessage());
-            }
+            $store = new FlockStore('/var/stores');
+            $factory = new LockFactory($store);
+            $lock = $factory->createLock('xlsx-order-generation', 30, false);
+            if ($lock->acquire()) {
+                try {
+                    $filename = $orderExport->export($order);
+                } catch (IOException $e) {
+                    throw new HttpException(418, "Unable to write file!" . $e->getMessage());
+                } finally {
+                    $lock->release();
+                }
 
-            $order->setSpreadsheetFilename($filename);
-            $orderRepository->add($order, true);
+                $order->setSpreadsheetFilename($filename);
+                $orderRepository->add($order, true);
+
+                $lock->release();
+            } else {
+                throw new HttpException(418, "Unable to acquire the lock!");
+            }
         }
 
         return $this->redirectToRoute('app_order_show', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);

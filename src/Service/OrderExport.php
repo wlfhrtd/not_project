@@ -67,11 +67,8 @@ class OrderExport
         $fileName = 'order_' . $order->getId() . '.xlsx';
 
         try {
-
             $this->writer->save($this->savePath . $fileName);
-
         } catch (Exception) {
-
             throw new IOException('PhpOfficeException: Unable to write file || ZipStream: Overflow exception');
         }
 
