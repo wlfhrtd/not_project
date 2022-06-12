@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use App\Repository\CartItemRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\PositiveOrZero;
 
 #[ORM\Entity(repositoryClass: CartItemRepository::class)]
@@ -15,10 +15,11 @@ class CartItem
     #[ORM\Column(type: 'integer')]
     private $id;
 
-    #[ORM\Column(type: 'integer')]
     #[PositiveOrZero]
+    #[ORM\Column(type: 'integer')]
     private $quantity;
 
+    #[NotBlank]
     #[ORM\ManyToOne(targetEntity: Product::class)]
     #[ORM\JoinColumn(nullable: false)]
     private $product;
@@ -96,7 +97,7 @@ class CartItem
      */
     public function equals(CartItem $item): bool
     {
-        return $this->getProduct()->getId() === $item->getProduct()->getId();
+        return $this->product->getId() === $item->getProduct()->getId();
     }
 
     /**
@@ -106,6 +107,6 @@ class CartItem
      */
     public function getItemTotal(): float
     {
-        return $this->getProduct()->getPrice() * $this->getQuantity();
+        return $this->product->getPrice() * $this->quantity;
     }
 }

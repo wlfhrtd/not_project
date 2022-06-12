@@ -6,6 +6,8 @@ use App\Repository\CartRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Validator\Constraints as AppAssert;
+use Symfony\Component\Validator\Constraints\Valid;
 
 #[ORM\Entity(repositoryClass: CartRepository::class)]
 class Cart
@@ -15,7 +17,8 @@ class Cart
     #[ORM\Column(type: 'integer')]
     private $id;
 
-
+    #[Valid]
+    #[AppAssert\UniqueForCollection(options: ['fields' => 'product.id'])]
     #[ORM\OneToMany(mappedBy: 'cart', targetEntity: CartItem::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private $items;
 
@@ -37,14 +40,13 @@ class Cart
         return $this->items;
     }
 
-    public function addItem(CartItem $item): bool
+    public function addItem(CartItem $item): self
     {
         /*
          * 'silent update'
-         * suitable for php on-site public cart (like in every shop)
-         * but in real application such implicit 'updates' should not happen
-         *
-        foreach ($this->getItems() as $existingItem) {
+         */
+        /*
+        foreach ($this->items as $existingItem) {
             // The item already exists, update the quantity
             if ($existingItem->equals($item)) {
                 $existingItem->setQuantity(
@@ -53,26 +55,33 @@ class Cart
                 return $this;
             }
         }
-
         $this->items[] = $item;
         $item->setCart($this);
-
         return $this;
         */
 
         /*
          * 'silent fail'
          */
-        foreach ($this->getItems() as $existingItem) {
+        /*
+        foreach ($this->items as $existingItem) {
             if ($existingItem->equals($item)) {
                 return false;
             }
         }
-
         $this->items[] = $item;
         $item->setCart($this);
 
         return true;
+        */
+
+        // default
+        if (!$this->items->contains($item)) {
+            $this->items[] = $item;
+            $item->setCart($this);
+        }
+
+        return $this;
     }
 
     public function removeItem(CartItem $item): self
@@ -96,7 +105,7 @@ class Cart
     {
         $total = 0;
 
-        foreach ($this->getItems() as $item) {
+        foreach ($this->items as $item) {
             $total += $item->getItemTotal();
         }
 
@@ -110,7 +119,7 @@ class Cart
      */
     public function removeAllItems(): self
     {
-        foreach ($this->getItems() as $item) {
+        foreach ($this->items as $item) {
             $this->removeItem($item);
         }
 

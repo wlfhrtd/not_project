@@ -5,7 +5,10 @@ namespace App\Entity;
 use App\Repository\OrderRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
+use Symfony\Component\Validator\Constraints\Callback;
 use Symfony\Component\Validator\Constraints\PositiveOrZero;
+use Symfony\Component\Validator\Constraints\Valid;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -34,13 +37,14 @@ class Order
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private $spreadsheetFilename;
 
-    #[ORM\Column(type: 'float')]
     #[PositiveOrZero]
+    #[ORM\Column(type: 'float')]
     private $total;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private $info;
 
+    #[Valid]
     #[ORM\ManyToOne(targetEntity: Cart::class, cascade: ['persist'])]
     private $cart;
 
@@ -135,5 +139,22 @@ class Order
         $this->cart = $cart;
 
         return $this;
+    }
+
+    #[Callback]
+    public function validate(ExecutionContextInterface $context): void
+    {
+        //dd($this->total, $this->getCart()->getTotal()); 362.91999999999996
+        $fromForm = $this->total;
+        $fromBackend = $this->getCart()->getTotal();
+        $fromFormRounded = round($fromForm, 2, PHP_ROUND_HALF_UP);
+        $fromBackendRounded = round($fromBackend, 2, PHP_ROUND_HALF_UP);
+        if ($fromFormRounded !== $fromBackendRounded) {
+            $errorMessage = 'Form total price: ' . $this->total . '; Backend total price: ' . $this->getCart()->getTotal();
+            $context->buildViolation('IdenticalTo violation @@ ' . $errorMessage)
+                ->atPath('total')
+                ->addViolation()
+            ;
+        }
     }
 }

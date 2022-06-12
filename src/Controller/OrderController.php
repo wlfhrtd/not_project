@@ -6,7 +6,7 @@ use App\Entity\Order;
 use App\Form\OrderType;
 use App\Form\PaginationType;
 use App\Repository\OrderRepository;
-use App\Service\OrderEditor;
+use App\Service\SupplyManager;
 use App\Service\OrderExport;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -47,22 +47,19 @@ class OrderController extends AbstractController
     }
 
     #[Route('/new', name: 'app_order_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
+    public function new(Request $request, OrderRepository $orderRepository, SupplyManager $supplyManager): Response
     {
         $order = new Order();
         $form = $this->createForm(OrderType::class, $order);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // order backend check
-            if (!$orderEditor->handle($order, $form)) {
-                $errorMessages = $orderEditor->getErrorMessages();
+            if (!$supplyManager->manage($order, SupplyManager::ORDER_ACTION_NEW)) {
+                $errorMessages = $supplyManager->getErrorMessages();
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
                 }
-                $orderEditor->clearErrorMessages();
                 $form = $this->createForm(OrderType::class, $order);
-                // $orderEditor->populateForm($order); RIP
                 $form->handleRequest($request);
                 return $this->renderForm('order/new.html.twig', [
                     'order' => $order,
@@ -92,23 +89,21 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_order_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Order $order, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
+    public function edit(Request $request, Order $order, OrderRepository $orderRepository, SupplyManager $supplyManager): Response
     {
         $form = $this->createForm(OrderType::class, $order);
-        // load values from DB (ajax handled in order_new) RIP
-        $orderEditor->backupOriginalItems($order);
+
+        $supplyManager->backupOriginalItems($order);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // order backend check
-            if (!$orderEditor->handle($order, $form)) {
-                $errorMessages = $orderEditor->getErrorMessages();
+            if (!$supplyManager->manage($order, SupplyManager::ORDER_ACTION_EDIT)) {
+                $errorMessages = $supplyManager->getErrorMessages();
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
                 }
-                $orderEditor->clearErrorMessages();
                 $form = $this->createForm(OrderType::class, $order);
-                // $orderEditor->populateForm($order); RIP
                 $form->handleRequest($request);
                 return $this->renderForm('order/edit.html.twig', [
                     'order' => $order,
@@ -128,17 +123,15 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_order_cancel', methods: ['POST'])]
-    public function cancel(Request $request, Order $order, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
+    public function cancel(Request $request, Order $order, OrderRepository $orderRepository, SupplyManager $supplyManager): Response
     {
         if ($this->isCsrfTokenValid('cancel' . $order->getId(), $request->request->get('_token'))) {
             // return products; backend check
-            if (!$orderEditor->cancel($order)) {
-                $errorMessages = $orderEditor->getErrorMessages();
+            if (!$supplyManager->manage($order, SupplyManager::ORDER_ACTION_CANCEL)) {
+                $errorMessages = $supplyManager->getErrorMessages();
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
                 }
-                $orderEditor->clearErrorMessages();
-
                 return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
             }
 
@@ -149,16 +142,16 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}/finish', name: 'app_order_finish', methods: ['POST'])]
-    public function finish(Request $request, Order $order, OrderRepository $orderRepository, OrderEditor $orderEditor): Response
+    public function finish(Request $request, Order $order, OrderRepository $orderRepository, SupplyManager $supplyManager): Response
     {
         if ($this->isCsrfTokenValid('finish' . $order->getId(), $request->request->get('_token'))) {
             // validation
-            if (!$orderEditor->finish($order)) {
-                $errorMessages = $orderEditor->getErrorMessages();
+            if (!$supplyManager->finish($order)) {
+                $errorMessages = $supplyManager->getErrorMessages();
                 foreach ($errorMessages as $key => $val) {
                     $this->addFlash($key, $val);
                 }
-                $orderEditor->clearErrorMessages();
+                $supplyManager->clearErrorMessages();
 
                 return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
             }

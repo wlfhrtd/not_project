@@ -7,21 +7,32 @@
 
 <button type="submit" id="order_form_submit" class="btn btn-primary">{{ button_label|default('Submit order') }}</button>
 
-{% for type, messages in app.flashes %}
-    {% for message in messages %}
+{%- block form_errors -%}
+
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><span aria-hidden="true"></span></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {% for error in form.vars.errors %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ message }}
+            {{ error.message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"><span aria-hidden="true"></span></button>
         </div>
     {% endfor %}
-{% endfor %}
+
+{%- endblock form_errors -%}
 
 <div id="order_cart_items"
      class="items"
-     data-prototype="{{ form_row(form.cart.items.vars.prototype, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' }})|e}}">
+     data-prototype="{{ form_widget(form.cart.items.vars.prototype, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' }})|e}}">
 
-    {% for item in form.cart.items %}
-        {{ form_row(item, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' } }) }}
+    {% for item in form.cart.items | sort %}
+        {{ form_widget(item, { 'attr': { 'class': 'd-flex justify-content-start orderCartItem' } }) }}
     {% endfor %}
 
 </div>

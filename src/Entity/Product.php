@@ -7,6 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\PositiveOrZero;
 use Vich\UploaderBundle\Mapping\Annotation\Uploadable;
 use Vich\UploaderBundle\Mapping\Annotation\UploadableField;
@@ -23,11 +24,12 @@ class Product
     #[ORM\Column(type: 'integer')]
     private $id;
 
+    #[NotBlank]
     #[ORM\Column(type: 'string', length: 255)]
     private $name;
 
-    #[ORM\Column(type: 'integer')]
     #[PositiveOrZero]
+    #[ORM\Column(type: 'integer')]
     private $quantityInStock;
 
     const STATUS_PRODUCT_NEW = 'new_product';
@@ -41,8 +43,8 @@ class Product
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private $description;
 
-    #[ORM\Column(type: 'float')]
     #[PositiveOrZero]
+    #[ORM\Column(type: 'float')]
     private $price;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -90,22 +92,11 @@ class Product
         return $this->quantityInStock;
     }
 
-    /**
-     * common sense check
-     *
-     * use bool check and handle errors
-     * if(!$p->setQuantity($n)) { ... //'violated non-negative' }
-     */
-    public function setQuantityInStock(int $quantityInStock): bool
+    public function setQuantityInStock(int $quantityInStock): self
     {
-        if ($quantityInStock < 0) {
-            // throw new \LogicException("Violation in product.setQuantityInStock(int): can't be negative");
-            return false;
-        }
-
         $this->quantityInStock = $quantityInStock;
 
-        return true;
+        return $this;
     }
 
     public function getStatus(): ?string
