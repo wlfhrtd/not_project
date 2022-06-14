@@ -166,7 +166,7 @@ class OrderController extends AbstractController
 
     #[Route('/{id}/export', name: 'app_order_export', methods: ['POST'])]
     public function export(Request $request, Order $order, OrderRepository $orderRepository, OrderExport $orderExport): Response
-    {
+    { // TODO test lock with 2nd window at start wait(5000) blabla check read same order or even edit just remove view restriction
         if ($this->isCsrfTokenValid('export'.$order->getId(), $request->request->get('_token'))) {
             $store = new FlockStore('/var/stores');
             $factory = new LockFactory($store);
