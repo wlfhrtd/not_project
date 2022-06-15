@@ -48,6 +48,15 @@ class Order
     #[ORM\ManyToOne(targetEntity: Cart::class, cascade: ['persist'])]
     private $cart;
 
+    #[ORM\Version]
+    #[ORM\Column(type: 'integer')]
+    private $version;
+
+    public function getCurrentVersion()
+    {
+        return $this->version;
+    }
+
     public function __construct()
     {
         $this->status = self::STATUS_ORDER_DRAFT;
@@ -61,7 +70,18 @@ class Order
 
     public function toLongString(): string
     {
-        return 'Order id: ' . $this->getId() . '; order.cart id: ' . $this->getCart()->getId();
+        $string = "Order id: " . $this->id
+            . ";\nOrder status: " . $this->status
+            . ";\nOrder customer: " . $this->customer->toLongString()
+            . ";\nOrder total: " . $this->total
+            . ";\nOrder info: " . $this->info
+            . ";\nOrder Cart id: " . $this->cart->getId()
+        ;
+        foreach ($this->cart->getItems() as $k => $item) {
+            $string .= "\n" . $k . " => " . $item->getProduct()->getName() . "; Quantity: " . $item->getQuantity() . "; UnitsInStock: " . $item->getProduct()->getQuantityInStock() . "; Price: " . $item->getProduct()->getPrice() . "; ItemTotalPrice: " . $item->getItemTotal();
+        }
+
+        return $string;
     }
 
     public function getId(): ?int

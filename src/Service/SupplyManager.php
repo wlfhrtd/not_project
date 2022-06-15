@@ -4,11 +4,14 @@ namespace App\Service;
 
 use App\Entity\CartItem;
 use App\Entity\Order;
+use Symfony\Component\HttpFoundation\Request;
+use UnhandledMatchError;
 
 class SupplyManager
 {
     private $originalItems; // contains order.cart.items 'backup' to handle order edit action
     private $errorMessages; // if returns false handle_ methods return true
+    private $transaction;
 
     const ORDER_ACTION_NEW = 'OrderActionNew';
     const ORDER_ACTION_CANCEL = 'OrderActionCancel';
@@ -45,10 +48,15 @@ class SupplyManager
         $this->errorMessages = null;
     }
 
+    public function getTransaction()
+    {
+        return $this->transaction;
+    }
+
     /**
      * backups loaded order cart items to handle edit action later by comparison
      */
-    public function backupOriginalItems(Order $order): void
+    public function backup(Order $order): void
     {
         if (!$this->originalItems) {
 
@@ -97,7 +105,7 @@ class SupplyManager
         foreach ($oldValues as $k => $oldValue) {
             $newValues[] = $oldValue - $diff[$k];
         }
-        $this->validateAndApply($newValues, $itemsModified, $products);
+        $this->validate($newValues, $itemsModified, $products);
     }
 
     private function handleEdit($items): void
@@ -122,13 +130,10 @@ class SupplyManager
             }
         }
 
-        $this->reduce($itemsSold);
-        $this->increase($itemsReturned);
-        $this->merge($itemsModified, $itemOrigMatch);
+        !count($itemsSold) ?: $this->reduce($itemsSold);
+        !count($itemsReturned) ?: $this->increase($itemsReturned);
+        !count($itemsModified) ?: $this->merge($itemsModified, $itemOrigMatch);
     }
-
-    // TODO admin, security
-    // TODO add locks, version for optimistic, pessimistic postgres may be for order or product quantity
 
     public function manage(Order $order, string $action): bool
     {
@@ -139,7 +144,7 @@ class SupplyManager
                 self::ORDER_ACTION_EDIT => self::handleEdit($order->getCart()->getItems()),
                 self::ORDER_ACTION_FINISH => self::finish($order),
             };
-        } catch (\UnhandledMatchError $e) {
+        } catch (UnhandledMatchError $e) {
             dd($e);
         }
 
@@ -150,7 +155,7 @@ class SupplyManager
         return false;
     }
 
-    private function validateAndApply($newValues, $items, $products): void
+    private function validate($newValues, $items, $products): void
     {
         foreach ($newValues as $k => $newValue) {
             if ($newValue < 0) {
@@ -158,9 +163,19 @@ class SupplyManager
             }
         }
         if (!$this->errorMessages) {
-            foreach ($products as $k => $product) {
-                $product->setQuantityInStock($newValues[$k]);
-            }
+            $this->addTransaction($products, $newValues);
+        }
+    }
+
+    public function init(Request $request, Order $order): void
+    {
+        !$request->getContent() ?: $this->backup($order);
+    }
+
+    private function addTransaction($products, $newValues): void
+    {
+        foreach ($products as $k => $product) {
+            $this->transaction[] = [$product->getId(), $newValues[$k]];
         }
     }
 
@@ -180,7 +195,7 @@ class SupplyManager
         foreach ($oldValues as $k => $oldValue) {
             $newValues[$k] = $oldValue - $amountSold[$k];
         }
-        $this->validateAndApply($newValues, $items, $products);
+        $this->validate($newValues, $items, $products);
     }
 
     private function increase($items): void
@@ -199,7 +214,7 @@ class SupplyManager
         foreach ($oldValues as $k => $oldValue) {
             $newValues[$k] = $oldValue + $amountReturned[$k];
         }
-        $this->validateAndApply($newValues, $items, $products);
+        $this->validate($newValues, $items, $products);
     }
 
     /**

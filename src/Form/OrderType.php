@@ -31,6 +31,8 @@ class OrderType extends AbstractType
                 'mapped' => true,
                 'required' => true,
                 'minimum_input_length' => 1,
+                'primary_key' => 'id',
+                'text_property' => 'toLongString',
             ])
             ->add('status', TextType::class)
             ->add('total', TextType::class, [

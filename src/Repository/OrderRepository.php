@@ -3,7 +3,10 @@
 namespace App\Repository;
 
 use App\Entity\Order;
+use App\Entity\Product;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Exception;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -32,6 +35,42 @@ class OrderRepository extends ServiceEntityRepository
         }
     }
 
+    /**
+     * @throws Exception
+     */
+    public function addPessimistic(Order $entity, array $transaction)
+    {
+        $em = $this->getEntityManager();
+
+        $productRepository = $em->getRepository(Product::class);
+
+        $conn = $em->getConnection();
+        $conn->beginTransaction();
+
+        try {
+            $productIDs = [];
+            $newValues = [];
+            foreach ($transaction as $row) {
+                $productIDs[] = $row[0];
+                $newValues[] = $row[1];
+            }
+            $products = [];
+            foreach ($productIDs as $productID) {
+                $products[] = $productRepository->find($productID, LockMode::PESSIMISTIC_WRITE);
+            }
+            foreach ($products as $k => $product) {
+                $product->setQuantityInStock($newValues[$k]);
+            }
+
+            $em->persist($entity);
+            $em->flush();
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollBack();
+            throw $e;
+        }
+    }
+
     public function remove(Order $entity, bool $flush = false): void
     {
         $this->getEntityManager()->remove($entity);
@@ -47,6 +86,44 @@ class OrderRepository extends ServiceEntityRepository
 
         if ($flush) {
             $this->getEntityManager()->flush();
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function hidePessimistic(Order $entity, array $transaction)
+    {
+        $em = $this->getEntityManager();
+
+        $productRepository = $em->getRepository(Product::class);
+
+        $conn = $em->getConnection();
+        $conn->beginTransaction();
+
+        try {
+            $productIDs = [];
+            $newValues = [];
+            foreach ($transaction as $row) {
+                $productIDs[] = $row[0];
+                $newValues[] = $row[1];
+            }
+            $products = [];
+            foreach ($productIDs as $productID) {
+                $products[] = $productRepository->find($productID, LockMode::PESSIMISTIC_WRITE);
+            }
+            foreach ($products as $k => $product) {
+                $product->setQuantityInStock($newValues[$k]);
+            }
+
+            $entity->setStatus(Order::STATUS_ORDER_CANCELED);
+
+            $em->persist($entity);
+            $em->flush();
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollBack();
+            throw $e;
         }
     }
 

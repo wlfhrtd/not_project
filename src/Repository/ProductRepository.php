@@ -4,6 +4,8 @@ namespace App\Repository;
 
 use App\Entity\Product;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Exception;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
@@ -32,6 +34,46 @@ class ProductRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+
+    /*
+    public function addPessimistic(Product $entity)
+    {
+        $em = $this->getEntityManager();
+        $conn = $em->getConnection();
+        $conn->beginTransaction();
+        try {
+            $product = $this->find($entity->getId(), LockMode::PESSIMISTIC_WRITE);
+            $product->setQuantityInStock($entity->getQuantityInStock());
+            $em->persist($product);
+            $em->flush();
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollBack();
+            throw $e;
+        }
+    }*/
+
+    /*
+     * public function wrapInTransaction(callable $func)
+    {
+        $this->conn->beginTransaction();
+
+        try {
+            $return = $func($this);
+
+            $this->flush();
+            $this->conn->commit();
+
+            return $return;
+        } catch (Throwable $e) {
+            $this->close();
+            $this->conn->rollBack();
+
+            throw $e;
+        }
+    }
+     */
 
     public function remove(Product $entity, bool $flush = false): void
     {

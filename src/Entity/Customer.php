@@ -74,6 +74,11 @@ class Customer
 
     public function __toString()
     {
+        return $this->id;
+    }
+
+    public function toLongString(): string
+    {
         return $this->lastName . ' ' . $this->firstName . ' ' . $this->middleName;
     }
 

@@ -6,6 +6,7 @@ use App\Entity\Order;
 use App\Form\OrderType;
 use App\Form\PaginationType;
 use App\Repository\OrderRepository;
+use App\Service\Locker;
 use App\Service\SupplyManager;
 use App\Service\OrderExport;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -49,7 +50,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/new', name: 'app_order_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, OrderRepository $orderRepository, SupplyManager $supplyManager): Response
+    public function new(Request $request, OrderRepository $orderRepository, SupplyManager $supplyManager, Locker $locker): Response
     {
         $order = new Order();
         $form = $this->createForm(OrderType::class, $order);
@@ -57,8 +58,7 @@ class OrderController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             if (!$supplyManager->manage($order, SupplyManager::ORDER_ACTION_NEW)) {
-                $errorMessages = $supplyManager->getErrorMessages();
-                foreach ($errorMessages as $key => $val) {
+                foreach ($supplyManager->getErrorMessages() as $key => $val) {
                     $this->addFlash($key, $val);
                 }
                 $form = $this->createForm(OrderType::class, $order);
@@ -68,8 +68,13 @@ class OrderController extends AbstractController
                     'form' => $form,
                 ]);
             }
-
-            $orderRepository->add($order, true);
+            // try to insert new order with pessimistic lock of product rows
+            if (!$locker->pessimisticAdd($order, $orderRepository, $supplyManager->getTransaction())) {
+                foreach ($locker->getErrors() as $k => $v) {
+                    $this->addFlash($k, $v);
+                }
+                return $this->redirectToRoute('app_order_new', [], Response::HTTP_MOVED_PERMANENTLY);
+            }
 
             return $this->redirectToRoute('app_order_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -91,18 +96,25 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_order_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Order $order, OrderRepository $orderRepository, SupplyManager $supplyManager): Response
+    public function edit(Request $request, Order $order, OrderRepository $orderRepository, SupplyManager $supplyManager, Locker $locker): Response
     {
+        $locker->updateOptimistic($request, $order);
+        $supplyManager->init($request, $order);
+
         $form = $this->createForm(OrderType::class, $order);
-
-        $supplyManager->backupOriginalItems($order);
-
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // optimistic lock version check
+            if (!$locker->check($request, $order)) {
+                foreach ($locker->getErrors() as $k => $v) {
+                    $this->addFlash($k, $v);
+                }
+                return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
+            }
+            // inventory management
             if (!$supplyManager->manage($order, SupplyManager::ORDER_ACTION_EDIT)) {
-                $errorMessages = $supplyManager->getErrorMessages();
-                foreach ($errorMessages as $key => $val) {
+                foreach ($supplyManager->getErrorMessages() as $key => $val) {
                     $this->addFlash($key, $val);
                 }
                 $form = $this->createForm(OrderType::class, $order);
@@ -112,8 +124,13 @@ class OrderController extends AbstractController
                     'form' => $form,
                 ]);
             }
-
-            $orderRepository->add($order, true);
+            // try to update order with pessimistic lock of product rows
+            if (!$locker->pessimisticAdd($order, $orderRepository, $supplyManager->getTransaction())) {
+                foreach ($locker->getErrors() as $k => $v) {
+                    $this->addFlash($k, $v);
+                }
+                return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
+            }
 
             return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
         }
@@ -125,19 +142,23 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_order_cancel', methods: ['POST'])]
-    public function cancel(Request $request, Order $order, OrderRepository $orderRepository, SupplyManager $supplyManager): Response
+    public function cancel(Request $request, Order $order, OrderRepository $orderRepository, SupplyManager $supplyManager, Locker $locker): Response
     {
         if ($this->isCsrfTokenValid('cancel' . $order->getId(), $request->request->get('_token'))) {
             // return products; backend check
             if (!$supplyManager->manage($order, SupplyManager::ORDER_ACTION_CANCEL)) {
-                $errorMessages = $supplyManager->getErrorMessages();
-                foreach ($errorMessages as $key => $val) {
+                foreach ($supplyManager->getErrorMessages() as $key => $val) {
                     $this->addFlash($key, $val);
                 }
                 return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
             }
-
-            $orderRepository->hide($order, true);
+            // try to update order with pessimistic lock of product rows
+            if (!$locker->pessimisticHide($order, $orderRepository, $supplyManager->getTransaction())) {
+                foreach ($locker->getErrors() as $k => $v) {
+                    $this->addFlash($k, $v);
+                }
+                return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
+            }
         }
 
         return $this->redirectToRoute('app_order_index', [], Response::HTTP_SEE_OTHER);
@@ -148,12 +169,9 @@ class OrderController extends AbstractController
     {
         if ($this->isCsrfTokenValid('finish' . $order->getId(), $request->request->get('_token'))) {
             if (!$supplyManager->manage($order, SupplyManager::ORDER_ACTION_FINISH)) {
-                $errorMessages = $supplyManager->getErrorMessages();
-                foreach ($errorMessages as $key => $val) {
+                foreach ($supplyManager->getErrorMessages() as $key => $val) {
                     $this->addFlash($key, $val);
                 }
-                $supplyManager->clearErrorMessages();
-
                 return $this->redirectToRoute('app_order_edit', ['id' => $order->getId()], Response::HTTP_MOVED_PERMANENTLY);
             }
 
@@ -166,7 +184,7 @@ class OrderController extends AbstractController
 
     #[Route('/{id}/export', name: 'app_order_export', methods: ['POST'])]
     public function export(Request $request, Order $order, OrderRepository $orderRepository, OrderExport $orderExport): Response
-    { // TODO test lock with 2nd window at start wait(5000) blabla check read same order or even edit just remove view restriction
+    {
         if ($this->isCsrfTokenValid('export'.$order->getId(), $request->request->get('_token'))) {
             $store = new FlockStore('/var/stores');
             $factory = new LockFactory($store);
