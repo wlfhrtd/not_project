@@ -6,9 +6,11 @@ use App\Entity\Product;
 use App\Form\PaginationType;
 use App\Form\ProductType;
 use App\Repository\ProductRepository;
+use Doctrine\DBAL\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/product')]
@@ -73,8 +75,11 @@ class ProductController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $productRepository->add($product, true);
-
+            try {
+                $productRepository->addPessimistic($product);
+            } catch (Exception $e) {
+                throw new HttpException(418, $e->getMessage());
+            }
             return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
         }
 

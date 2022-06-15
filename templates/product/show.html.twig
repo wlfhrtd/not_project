@@ -38,6 +38,16 @@
         </tbody>
     </table>
 
+    <div class="card-img">
+        {% if product.imageFilename %}
+            <a href="{{ asset('images/products/' ~ product.imageFilename) }}" target="_blank">
+                <img src="{{ asset('images/products/' ~ product.imageFilename) }}" alt="{{ product.name }}">
+            </a>
+        {% else %}
+            <img src="https://via.placeholder.com/600x400" alt="{{ product.name }}" class="img-fluid">
+        {% endif %}
+    </div>
+
     <a href="{{ path('app_product_index') }}" class="btn btn-secondary">back to list</a>
 
     <a href="{{ path('app_product_edit', {'id': product.id}) }}" class="btn btn-secondary">edit</a>

@@ -35,16 +35,29 @@ class ProductRepository extends ServiceEntityRepository
         }
     }
 
-
-    /*
+    /**
+     * @throws Exception
+     */
     public function addPessimistic(Product $entity)
     {
         $em = $this->getEntityManager();
         $conn = $em->getConnection();
         $conn->beginTransaction();
         try {
+            // make 'changeset' before find()
+            $newName = $entity->getName();
+            $newQuantityInStock = $entity->getQuantityInStock();
+            $newDescription = $entity->getDescription();
+            $newPrice = $entity->getPrice();
+            // load db row - all proxies lose changes
             $product = $this->find($entity->getId(), LockMode::PESSIMISTIC_WRITE);
-            $product->setQuantityInStock($entity->getQuantityInStock());
+            // apply changeset
+            $product->setName($newName);
+            $product->setQuantityInStock($newQuantityInStock);
+            $product->setDescription($newDescription);
+            $product->setPrice($newPrice);
+            // product.imageFilename, product.status are successfully handled by entity listeners
+            // congratz you're doctrine jr. from now on
             $em->persist($product);
             $em->flush();
             $conn->commit();
@@ -52,28 +65,7 @@ class ProductRepository extends ServiceEntityRepository
             $conn->rollBack();
             throw $e;
         }
-    }*/
-
-    /*
-     * public function wrapInTransaction(callable $func)
-    {
-        $this->conn->beginTransaction();
-
-        try {
-            $return = $func($this);
-
-            $this->flush();
-            $this->conn->commit();
-
-            return $return;
-        } catch (Throwable $e) {
-            $this->close();
-            $this->conn->rollBack();
-
-            throw $e;
-        }
     }
-     */
 
     public function remove(Product $entity, bool $flush = false): void
     {
