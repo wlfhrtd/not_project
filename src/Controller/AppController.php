@@ -12,9 +12,6 @@ class AppController extends AbstractController
     #[Route('/', name: 'app_main')]
     public function index(): Response
     {
-        //TODO add $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY'); for admin routes or Not cuz of acceesss control
-        // #[IsGranted('ROLE_ADMIN')]  #[IsGranted('ROLE_SUPER_ADMIN')] {% if is_granted('ROLE_ADMIN') %}
-
         return $this->render('app/index.html.twig', [
             'controller_name' => 'AppController',
         ]);
