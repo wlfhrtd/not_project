@@ -3,4 +3,4 @@ database:
     type: postgresql:13
     disk: 1024
 rabbitmq:
-    type: rabbitmq:3.10
+    type: rabbitmq:3.10.2-management-alpine
