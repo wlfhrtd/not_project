@@ -16,6 +16,7 @@
         "sensio/framework-extra-bundle": "^6.2",
         "stof/doctrine-extensions-bundle": "^1.7",
         "symfony/amqp-messenger": "6.1.*",
+        "symfony/apache-pack": "^1.0",
         "symfony/asset": "6.1.*",
         "symfony/console": "6.1.*",
         "symfony/doctrine-bridge": "6.1.*",
