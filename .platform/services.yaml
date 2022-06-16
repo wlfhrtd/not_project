@@ -4,3 +4,4 @@ database:
     disk: 1024
 rabbitmq:
     type: rabbitmq:3.8
+    disk: 512
